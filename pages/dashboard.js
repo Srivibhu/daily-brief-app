@@ -175,8 +175,8 @@ export default function Dashboard() {
     ...tags.map(t => ({ v: 'tag:' + t.name, l: t.name, color: t.color }))]
   const pillStyle = (o, a) => o.color
     ? (a ? { background: o.color, borderColor: o.color, color: '#fff' } : { borderColor: o.color + '40', color: o.color })
-    : o.v === 'overdue' ? (a ? { background: '#ef4444', borderColor: '#ef4444', color: '#fff' } : { borderColor: '#330', color: '#ef4444' })
-    : o.v === 'today' ? (a ? { background: '#f59e0b', borderColor: '#f59e0b', color: '#000' } : { borderColor: '#332200', color: '#f59e0b' }) : undefined
+    : o.v === 'overdue' ? (a ? { background: 'var(--red)', borderColor: 'var(--red)', color: '#fff' } : { borderColor: 'var(--red)', color: 'var(--red)' })
+    : o.v === 'today' ? (a ? { background: 'var(--amber)', borderColor: 'var(--amber)', color: '#fff' } : { borderColor: 'var(--amber)', color: 'var(--amber)' }) : undefined
 
   return (
     <div style={{ maxWidth: 1240, margin: '0 auto' }}>
@@ -233,13 +233,13 @@ export default function Dashboard() {
                 {!filtered.length && <div className="empty">No tasks here — add one above</div>}
                 {filter === 'all' ? (
                   <>
-                    {inprog.length > 0 && <>{group('In Progress', '#f59e0b', inprog.length)}{inprog.map(card)}</>}
-                    {todo.length > 0 && <>{group('To Do', '#333', todo.length, { style: { marginTop: inprog.length ? 4 : 0 } })}{todo.map(card)}</>}
+                    {inprog.length > 0 && <>{group('In Progress', 'var(--amber)', inprog.length)}{inprog.map(card)}</>}
+                    {todo.length > 0 && <>{group('To Do', 'var(--dim)', todo.length, { style: { marginTop: inprog.length ? 4 : 0 } })}{todo.map(card)}</>}
                   </>
                 ) : active.map(card)}
                 {done.length > 0 && (
                   <>
-                    {group('Done', '#22c55e', done.length, { onClick: () => setDoneOpen(!doneOpen), toggle: doneOpen ? '▾' : '▸', style: { marginTop: 8 } })}
+                    {group('Done', 'var(--green)', done.length, { onClick: () => setDoneOpen(!doneOpen), toggle: doneOpen ? '▾' : '▸', style: { marginTop: 8 } })}
                     {doneOpen && done.map(card)}
                   </>
                 )}

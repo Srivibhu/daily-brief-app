@@ -43,8 +43,8 @@ export default function Login() {
             onChange={e => setPassword(e.target.value)} placeholder="••••••••"
             autoComplete={mode === 'login' ? 'current-password' : 'new-password'} required />
           {error && (
-            <div style={{ background: '#1a0505', border: '1px solid #3b0d0d', borderRadius: 5, padding: '8px 12px',
-              fontFamily: 'var(--sans)', fontSize: 12, color: '#fca5a5', marginTop: 14 }}>{error}</div>
+            <div style={{ background: 'rgba(184,50,50,.08)', border: '1px solid rgba(184,50,50,.3)', borderRadius: 5, padding: '8px 12px',
+              fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--red)', marginTop: 14 }}>{error}</div>
           )}
           <button type="submit" className="btn" disabled={loading} style={{ width: '100%', padding: 11, fontSize: 13, marginTop: 18 }}>
             {loading ? '…' : mode === 'login' ? 'Sign in' : 'Create account'}
