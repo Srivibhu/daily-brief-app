@@ -137,7 +137,8 @@ export default function Dashboard() {
   // Auth check
   useEffect(() => {
     api('/api/auth/me').then(data => {
-      if (data?.id) { setUser(data); loadData() }
+      const u = data?.user || data
+      if (u?.id) { setUser(u); loadData() }
       else router.replace('/login')
     }).catch(() => router.replace('/login')).finally(() => setAuthLoading(false))
   }, [])
