@@ -17,7 +17,7 @@ export default function Login() {
       const res = await fetch(`/api/auth/${mode}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim(), password })
+        body: JSON.stringify({ username: username.trim(), password }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Something went wrong'); setLoading(false); return }
@@ -28,58 +28,32 @@ export default function Login() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center',
-      justifyContent: 'center', background: 'var(--bg)'
-    }}>
-      <div style={{
-        width: 360, background: 'var(--surface)', border: '1px solid var(--border)',
-        borderRadius: 14, padding: 36
-      }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6, color: 'var(--text)', fontFamily: 'Georgia, serif' }}>
-          Daily Brief
-        </h1>
-        <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 28 }}>
-          {mode === 'login' ? 'Sign in to your workspace' : 'Create your workspace'}
-        </p>
-
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div className="panel" style={{ width: 360, maxWidth: '100%', padding: 32, background: 'var(--s1)' }}>
+        <div className="top-bar" style={{ display: 'block', marginBottom: 22 }}>
+          <h1>Daily Brief</h1>
+          <div className="sub">{mode === 'login' ? 'Sign in to your workspace' : 'Create your workspace'}</div>
+        </div>
         <form onSubmit={submit}>
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ display: 'block', fontSize: 12, color: 'var(--text2)', marginBottom: 6 }}>
-              Username
-            </label>
-            <input
-              value={username} onChange={e => setUsername(e.target.value)}
-              placeholder="your_name" autoComplete="username" required
-            />
-          </div>
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 12, color: 'var(--text2)', marginBottom: 6 }}>
-              Password
-            </label>
-            <input
-              type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••" autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              required
-            />
-          </div>
+          <div className="field-label" style={{ marginTop: 0 }}>Username</div>
+          <input className="due-input" style={{ width: '100%', padding: '9px 10px', fontSize: 13 }} value={username}
+            onChange={e => setUsername(e.target.value)} placeholder="your_name" autoComplete="username" required />
+          <div className="field-label">Password</div>
+          <input className="due-input" style={{ width: '100%', padding: '9px 10px', fontSize: 13 }} type="password" value={password}
+            onChange={e => setPassword(e.target.value)} placeholder="••••••••"
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'} required />
           {error && (
-            <div style={{ background: '#2d1515', border: '1px solid #7f1d1d', borderRadius: 6,
-              padding: '8px 12px', fontSize: 13, color: '#fca5a5', marginBottom: 16 }}>
-              {error}
-            </div>
+            <div style={{ background: '#1a0505', border: '1px solid #3b0d0d', borderRadius: 5, padding: '8px 12px',
+              fontFamily: 'var(--sans)', fontSize: 12, color: '#fca5a5', marginTop: 14 }}>{error}</div>
           )}
-          <button type="submit" className="btn-primary" disabled={loading}
-            style={{ width: '100%', padding: '11px', fontSize: 15 }}>
-            {loading ? '...' : mode === 'login' ? 'Sign in' : 'Create account'}
+          <button type="submit" className="btn" disabled={loading} style={{ width: '100%', padding: 11, fontSize: 13, marginTop: 18 }}>
+            {loading ? '…' : mode === 'login' ? 'Sign in' : 'Create account'}
           </button>
         </form>
-
-        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text2)' }}>
+        <p style={{ textAlign: 'center', marginTop: 18, fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--sub)' }}>
           {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
           <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
-            style={{ background: 'none', color: 'var(--accent)', fontSize: 13, cursor: 'pointer',
-              border: 'none', padding: 0 }}>
+            style={{ background: 'none', color: 'var(--blue)', fontSize: 12, cursor: 'pointer', border: 'none', padding: 0 }}>
             {mode === 'login' ? 'Register' : 'Sign in'}
           </button>
         </p>
