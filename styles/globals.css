@@ -24,6 +24,7 @@
   --overlay:rgba(34,42,27,.5);
   /* hero gradient stops (text on top is always cream) */
   --hero-a:#34421f; --hero-b:#55693a; --hero-c:#7d9257;
+  --card-a:#5b6e3f; --card-b:#758a58;
   --glow-1:rgba(106,124,75,.22); --glow-2:rgba(154,172,120,.20);
   /* chart tooltip */
   --tip-bg:#fbfaf4; --tip-text:#222a1b; --tip-sub:#76806a; --tip-line:#d2d6bf;
@@ -48,6 +49,7 @@
   --act-1:#465433; --act-2:#66794a;
   --overlay:rgba(8,5,3,.68);
   --hero-a:#26321b; --hero-b:#43552e; --hero-c:#61773f;
+  --card-a:#45543a; --card-b:#5b6c43;
   --glow-1:rgba(125,145,90,.16); --glow-2:rgba(90,110,60,.18);
   --tip-bg:#251d16; --tip-text:#efe7d8; --tip-sub:#a89b86; --tip-line:#514236;
   --shadow:0 1px 3px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.28);
@@ -159,13 +161,33 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .task-card:hover{transform:translateY(-2px);border-color:var(--m-soft);box-shadow:var(--shadow-hover)}
 .task-card.open{border-color:var(--m-main);box-shadow:var(--shadow-hover)}
 .task-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--card-accent,var(--m-soft));border-radius:12px 0 0 12px}
-/* in-progress: soft moss wash */
-.task-card.prog-card{background:linear-gradient(120deg,var(--m-wash),var(--s1) 65%)}
-/* done: settled moss tint, muted */
-.task-card.done-card{background:linear-gradient(120deg,var(--m-wash),var(--s2));box-shadow:none}
+/* every task row is a moss-green card; inside it the palette is remapped to cream-on-moss */
+.task-card{
+  --text:#f8f5ea; --sub:rgba(248,245,234,.76); --dim:rgba(248,245,234,.32);
+  --b1:rgba(248,245,234,.32); --b2:rgba(248,245,234,.17);
+  --s1:rgba(248,245,234,.11); --s2:rgba(248,245,234,.13); --s3:rgba(248,245,234,.18); --s4:rgba(248,245,234,.27);
+  --bg:rgba(18,26,8,.24);
+  --m-main:#f8f5ea; --m-soft:rgba(248,245,234,.72); --m-wash:rgba(248,245,234,.10); --m-deep:#2f3b22;
+  --blue:#f8f5ea; --blue2:#ffffff; --on-blue:var(--card-a);
+  --red:#f7bfb6; --amber:#f4dfa8; --orange:#f7c9a9; --green:#d9edcf;
+  --tint-red:rgba(247,191,182,.22); --tint-amber:rgba(244,223,168,.22); --tint-moss:rgba(248,245,234,.20);
+  --danger-line:rgba(247,191,182,.55); --danger-bg:rgba(247,191,182,.16);
+  --hover-moss:rgba(248,245,234,.13);
+  color-scheme:dark;color:var(--text);
+  background:linear-gradient(120deg,var(--card-a),var(--card-b));
+  border-color:transparent;
+}
+.task-card:hover{border-color:rgba(248,245,234,.4)}
+.task-card.open{border-color:rgba(248,245,234,.55)}
+.task-card.prog-card{background:linear-gradient(120deg,var(--card-a),var(--card-b) 70%,var(--card-b))}
+.task-card.done-card{box-shadow:none;background:linear-gradient(120deg,var(--card-a),var(--card-b))}
+.task-card.done-card .card-body{opacity:.72}
 .task-card.done-card::before{background:var(--green)}
 .task-card.done-card .card-title{text-decoration:line-through;color:var(--sub)}
-.task-card.done-card .card-body{opacity:.75}
+.task-card .tag,.task-card .tag-toggle{background:#f8f5ea!important}
+.task-card .tag-toggle{opacity:.5}.task-card .tag-toggle.selected{opacity:1}
+.task-card .card-check.done::after{color:var(--card-a)}
+.task-card .card-detail{background:rgba(18,26,8,.16);border-top-color:rgba(248,245,234,.18)}
 
 .card-body{padding:15px 15px 12px 21px;cursor:pointer;display:flex;gap:13px;align-items:flex-start}
 .card-check{flex-shrink:0;width:21px;height:21px;border-radius:50%;border:1.5px solid var(--dim);display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .2s;cursor:pointer;background:transparent}
