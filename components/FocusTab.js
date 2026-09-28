@@ -3,7 +3,7 @@ import { WeekBars } from './charts'
 import { todayStr, dateStr } from '../lib/util'
 
 const CIRC = 2 * Math.PI * 85
-const RING = { focus: 'var(--blue)', short: 'var(--green)', long: '#8b6fc4' }
+const RING = { focus: 'var(--blue)', short: 'var(--green)', long: 'var(--purple)' }
 const LABEL = { focus: 'Focus', short: 'Short Break', long: 'Long Break' }
 const GOAL = 100
 

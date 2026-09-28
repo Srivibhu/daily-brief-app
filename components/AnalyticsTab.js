@@ -28,7 +28,7 @@ export default function AnalyticsTab({ tasks, sessions }) {
     ['Tasks this week', tw.scheduled], ['Completed this week', tw.completed, 'var(--green)'],
     ['Completion rate', tw.scheduled ? Math.round(tw.completed / tw.scheduled * 100) + '%' : '—'],
     ['vs last week', pct === null ? '—' : `${pct > 0 ? '+' : ''}${pct}%`, pct === null ? undefined : pct >= 0 ? 'var(--green)' : 'var(--red)'],
-    ['Total focus (90d)', fmtMins(total), '#8b6fc4'], ['Focus days', days], ['Avg focus / day', days ? fmtMins(Math.round(total / days)) : '—'], ['All tasks', tasks.length],
+    ['Total focus (90d)', fmtMins(total), 'var(--purple)'], ['Focus days', days], ['Avg focus / day', days ? fmtMins(Math.round(total / days)) : '—'], ['All tasks', tasks.length],
   ]
   return (
     <div>
