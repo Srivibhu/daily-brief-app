@@ -75,3 +75,11 @@ CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks(due);
 CREATE INDEX IF NOT EXISTS idx_tasks_week ON tasks(user_id, week_number, year_number);
 CREATE INDEX IF NOT EXISTS idx_focus_user_date ON focus_sessions(user_id, date);
 CREATE INDEX IF NOT EXISTS idx_tags_user ON tags(user_id);
+
+-- Daily activity counter (drives the 28-day activity grid). Added after v1; safe to re-run.
+CREATE TABLE IF NOT EXISTS activity (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  count INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, date)
+);
