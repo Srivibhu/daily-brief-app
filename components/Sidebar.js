@@ -9,6 +9,7 @@ export default function Sidebar({ tasks, sessions, activity }) {
   const inprog = tasks.filter(t => t.progress > 0 && t.progress < 100).length
   const todo = tasks.filter(t => t.progress === 0).length
   const overall = tasks.length ? Math.round(tasks.reduce((s, t) => s + t.progress, 0) / tasks.length) : 0
+  const dueToday = tasks.filter(t => t.due === todayStr() && t.progress < 100).length
   const mins = sessions.filter(s => s.date === todayStr()).reduce((a, s) => a + s.minutes, 0)
   const { labels, data } = weekData(sessions)
   const soon = tasks.filter(t => t.due && t.progress < 100).map(t => ({ ...t, u: urgencyInfo(t.due) }))
@@ -21,10 +22,14 @@ export default function Sidebar({ tasks, sessions, activity }) {
 
   return (
     <div className="sidebar">
-      <div className="panel">
+      <div className="panel hero">
         <div className="brief-date">{now.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</div>
         <div className="greeting">{h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}</div>
-        <div className="divider" />
+        <div className="hero-sub">
+          {dueToday ? `${dueToday} task${dueToday !== 1 ? 's' : ''} due today` : 'Nothing due today'} · {overall}% complete overall
+        </div>
+      </div>
+      <div className="panel">
         <div className="sec-label">Progress</div>
         {!tasks.length && <div className="empty" style={{ padding: '5px 0', fontSize: 12 }}>No tasks yet</div>}
         {tasks.map(t => (

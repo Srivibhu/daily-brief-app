@@ -6,7 +6,8 @@ function TagChip({ tag }) {
   return <span className="tag" style={{ background: tag.color + '18', color: tag.color }}>{tag.name}</span>
 }
 
-function DaysLeft({ u }) {
+function DaysLeft({ u, done }) {
+  if (done) return <div className="days-left"><div className="dl-num" style={{ fontSize: 12, color: 'var(--green)' }}>Done</div></div>
   if (!u) return <div className="days-left"><div className="dl-num" style={{ fontSize: 13, color: 'var(--sub)' }}>—</div></div>
   if (u.num !== null) {
     return (
@@ -56,7 +57,7 @@ function NoteEditor({ html, onSave }) {
   )
 }
 
-export default function TaskCard({ task: t, tags, open, onToggle, onProgress, onUpdate, onDelete, onCyclePriority }) {
+export default function TaskCard({ task: t, idx = 0, tags, open, onToggle, onProgress, onUpdate, onDelete, onCyclePriority }) {
   const s = statusOf(t), u = urgencyInfo(t.due)
   const notesPreview = stripHtml(t.notes)
   const taskTags = (t.tags || []).map(n => tags.find(g => g.name === n)).filter(Boolean)
@@ -76,8 +77,8 @@ export default function TaskCard({ task: t, tags, open, onToggle, onProgress, on
   const commitPct = () => { onProgress(t.id, Math.max(0, Math.min(100, parseInt(editPct) || 0))); setEditPct(null) }
 
   return (
-    <div className={`task-card${s === 'done' ? ' done-card' : ''}${open ? ' open' : ''}`}
-      style={{ '--card-accent': accentColor(t) }} onClick={onToggle}>
+    <div className={`task-card${s === 'done' ? ' done-card' : ''}${s === 'inprog' ? ' prog-card' : ''}${open ? ' open' : ''}`}
+      style={{ '--card-accent': accentColor(t), '--i': Math.min(idx, 12) }} onClick={onToggle}>
       <div className="card-body">
         <button className={`card-check ${s === 'done' ? 'done' : s === 'inprog' ? 'inprog' : ''}`}
           title={s === 'done' ? 'Mark incomplete' : 'Mark complete'}
@@ -88,7 +89,6 @@ export default function TaskCard({ task: t, tags, open, onToggle, onProgress, on
           <div className="card-chips">
             {taskTags.map(g => <TagChip key={g.id} tag={g} />)}
             <button className={`priority-flag ${t.priority ? 'pf-' + t.priority : 'pf-none'}`}
-              style={t.priority ? undefined : { opacity: 0.3 }}
               onClick={e => { stop(e); onCyclePriority(t.id) }}>
               {t.priority ? PRIORITY_LABELS[t.priority] : 'Priority'}
             </button>
@@ -96,7 +96,7 @@ export default function TaskCard({ task: t, tags, open, onToggle, onProgress, on
           </div>
         </div>
         <div className="card-right">
-          <DaysLeft u={u} />
+          <DaysLeft u={u} done={s === 'done'} />
           <div className="card-hover-actions">
             <button className="icon-btn" title="+25%" onClick={e => { stop(e); onProgress(t.id, Math.min(100, t.progress + 25)) }}>+</button>
             <button className="icon-btn del" title="Delete" onClick={e => { stop(e); if (confirm('Delete this task?')) onDelete(t.id) }}>×</button>
@@ -106,7 +106,7 @@ export default function TaskCard({ task: t, tags, open, onToggle, onProgress, on
 
       <div className="card-prog-wrap">
         <div className="card-prog-row">
-          <div className="card-prog-track"><div className="card-prog-fill" style={{ width: t.progress + '%', background: progColor(t.progress) }} /></div>
+          <div className="card-prog-track"><div className={`card-prog-fill${t.progress > 0 && t.progress < 100 ? ' live' : ''}`} style={{ width: t.progress + '%', background: progColor(t.progress) }} /></div>
           {editPct === null
             ? <span className="card-prog-pct" onClick={e => { stop(e); setEditPct(String(t.progress)) }}>{t.progress}%</span>
             : <input className="card-pct-input" type="number" min="0" max="100" autoFocus value={editPct}
@@ -117,7 +117,7 @@ export default function TaskCard({ task: t, tags, open, onToggle, onProgress, on
       </div>
 
       {open && (
-        <div className="card-detail" style={{ display: 'block' }} onClick={stop}>
+        <div className="card-detail" onClick={stop}>
           <div className="detail-slider-row" style={{ marginBottom: 12 }}>
             <span className="detail-label">Progress</span>
             <input type="range" min="0" max="100" step="5" value={t.progress} onChange={e => onProgress(t.id, +e.target.value)} />

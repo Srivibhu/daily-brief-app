@@ -27,7 +27,7 @@ export function Donut({ done, inprog, todo }) {
     type: 'doughnut',
     data: {
       labels: ['Done', 'In Progress', 'To Do'],
-      datasets: [{ data: [done, inprog, todo || (!done && !inprog ? 1 : 0)], backgroundColor: [v('--green'), v('--amber'), v('--s4')], borderWidth: 0, hoverOffset: 3 }],
+      datasets: [{ data: [done, inprog, todo || (!done && !inprog ? 1 : 0)], backgroundColor: [v('--m-main'), v('--m-soft'), v('--s4')], borderWidth: 0, hoverOffset: 3 }],
     },
     options: { responsive: true, maintainAspectRatio: false, cutout: '74%', animation: false,
       plugins: { legend: { display: false }, tooltip: { ...tooltip(v), callbacks: { label: c => `${c.label}: ${c.raw}` } } } },
@@ -38,7 +38,7 @@ export function Donut({ done, inprog, todo }) {
 export function WeekBars({ labels, data }) {
   const ref = useChart(v => ({
     type: 'bar',
-    data: { labels, datasets: [{ data, backgroundColor: v('--purple') + 'a6', borderColor: v('--purple'), borderWidth: 1, borderRadius: 2, hoverBackgroundColor: v('--purple') }] },
+    data: { labels, datasets: [{ data, backgroundColor: v('--m-soft') + 'cc', borderColor: v('--m-main'), borderWidth: 1, borderRadius: 3, hoverBackgroundColor: v('--m-main') }] },
     options: { responsive: true, maintainAspectRatio: false, animation: false,
       plugins: { legend: { display: false }, tooltip: { ...tooltip(v), callbacks: { label: c => `${c.raw} min` } } },
       scales: {
