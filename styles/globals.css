@@ -34,6 +34,9 @@
   --act-1:#d5ddc4;
   --act-2:#a3b57f;
   --overlay:rgba(40,30,20,.45);
+  --moss-bg:#6a7c4b;
+  --moss-text:#f7f3ea;
+  --tip-bg:#faf8f4; --tip-text:#1a1814; --tip-sub:#8a7e6e; --tip-line:#d4ccc0;
   /* Fonts */
   --serif:'Georgia','Times New Roman',serif;
   --sans:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
@@ -75,6 +78,9 @@
   --act-1:#4a5636;
   --act-2:#66794a;
   --overlay:rgba(8,5,3,.68);
+  --moss-bg:#59693f;
+  --moss-text:#f3eee2;
+  --tip-bg:#281f18; --tip-text:#efe6d8; --tip-sub:#a99b88; --tip-line:#54443a;
   --shadow:0 1px 4px rgba(0,0,0,.35),0 4px 16px rgba(0,0,0,.25);
   --shadow-hover:0 2px 8px rgba(0,0,0,.45),0 8px 24px rgba(0,0,0,.35);
   --shadow-modal:0 8px 40px rgba(0,0,0,.6);
@@ -395,3 +401,50 @@ button{font-family:var(--sans)}
 .theme-toggle:hover{color:var(--text);border-color:var(--sub)}
 .login-theme{position:fixed;top:16px;right:16px}
 body,.panel,.task-card,.stat,.modal{transition:background-color .2s,border-color .2s}
+
+/* ══ Moss-green surfaces: sidebar boxes + task cards ══
+   Inside these, the theme variables are remapped to cream-on-moss values so every
+   existing child (text, chips, bars, inputs, charts) adapts without per-element rules. */
+.sidebar .panel,.tip-panel,.task-card{
+  --text:var(--moss-text);
+  --sub:rgba(247,243,234,.74);
+  --dim:rgba(247,243,234,.30);
+  --b1:rgba(247,243,234,.30);
+  --b2:rgba(247,243,234,.16);
+  --s1:rgba(247,243,234,.10);
+  --s2:rgba(247,243,234,.12);
+  --s3:rgba(247,243,234,.17);
+  --s4:rgba(247,243,234,.26);
+  --bg:rgba(20,28,10,.22);
+  --blue:#f7f3ea;
+  --blue2:#ffffff;
+  --on-blue:var(--moss-bg);
+  --red:#f6bcb3;
+  --amber:#f3dea6;
+  --orange:#f6c6a6;
+  --green:#d7ebcc;
+  --purple:#e0d8f3;
+  --tint-red:rgba(246,188,179,.22);
+  --tint-amber:rgba(243,222,166,.22);
+  --tint-moss:rgba(247,243,234,.20);
+  --danger-line:rgba(246,188,179,.5);
+  --danger-bg:rgba(246,188,179,.16);
+  --hover-moss:rgba(247,243,234,.12);
+  --act-1:rgba(247,243,234,.34);
+  --act-2:rgba(247,243,234,.62);
+  color-scheme:dark;
+  color:var(--text);
+}
+.sidebar .panel,.tip-panel{background:var(--moss-bg);border-color:transparent}
+.task-card{background:var(--moss-bg);border-color:transparent;box-shadow:var(--shadow)}
+.task-card:hover,.task-card.open{border-color:rgba(247,243,234,.35)}
+.task-card .card-check.done::after{color:var(--moss-bg)}
+.task-card .tag,.task-card .tag-toggle{background:#f7f3ea !important}
+.task-card .tag-toggle{opacity:.45}
+.task-card .tag-toggle.selected{opacity:1}
+.tip-panel{border-left:3px solid #f7f3ea;border-radius:0 8px 8px 0}
+.tip-panel .tip-label{color:#f7f3ea}
+
+/* Primary-coloured call to action in the quick-add bar */
+.quick-add-submit{background:var(--blue);color:var(--on-blue);border-left-color:var(--blue)}
+.quick-add-submit:hover{background:var(--blue2);color:var(--on-blue)}
