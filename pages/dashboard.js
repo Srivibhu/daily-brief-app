@@ -160,8 +160,8 @@ export default function Dashboard() {
   const inprog = active.filter(t => t.progress > 0), todo = active.filter(t => t.progress === 0)
 
   const toggleOpen = id => setOpenIds(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
-  const card = t => (
-    <TaskCard key={t.id} task={t} tags={tags} open={openIds.has(t.id)} onToggle={() => toggleOpen(t.id)}
+  const card = (t, i) => (
+    <TaskCard key={t.id} task={t} idx={i} tags={tags} open={openIds.has(t.id)} onToggle={() => toggleOpen(t.id)}
       onProgress={setProgress} onUpdate={updateTask} onDelete={deleteTask} onCyclePriority={cyclePriority} />
   )
   const group = (label, color, n, extra) => (
