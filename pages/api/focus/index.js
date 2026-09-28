@@ -1,5 +1,5 @@
 import { withAuth } from '../../../lib/auth'
-import { sql } from '../../../lib/db'
+import { sql, dateOnly } from '../../../lib/db'
 
 export default withAuth(async function handler(req, res) {
   const userId = req.userId
@@ -12,7 +12,7 @@ export default withAuth(async function handler(req, res) {
       SELECT * FROM focus_sessions
       WHERE user_id = ${userId} AND date >= ${since.toISOString().slice(0, 10)}
       ORDER BY date DESC`
-    return res.status(200).json(rows)
+    return res.status(200).json(rows.map(dateOnly))
   }
 
   if (req.method === 'POST') {
@@ -24,7 +24,7 @@ export default withAuth(async function handler(req, res) {
         VALUES (${userId}, ${date}, ${minutes}, ${!!completed},
                 ${task_name || null}, ${time_of_day || null}, ${!!manual})
         RETURNING *`
-      return res.status(201).json(rows[0])
+      return res.status(201).json(dateOnly(rows[0]))
     } catch (error) {
       return res.status(500).json({ error: error.message })
     }

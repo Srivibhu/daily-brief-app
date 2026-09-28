@@ -1,5 +1,5 @@
 import { withAuth } from '../../../lib/auth'
-import { sql } from '../../../lib/db'
+import { sql, dateOnly } from '../../../lib/db'
 
 export default withAuth(async function handler(req, res) {
   const userId = req.userId
@@ -8,7 +8,7 @@ export default withAuth(async function handler(req, res) {
     try {
       const { rows } = await sql`
         SELECT * FROM tasks WHERE user_id = ${userId} ORDER BY created_at DESC`
-      return res.status(200).json(rows)
+      return res.status(200).json(rows.map(dateOnly))
     } catch (error) {
       return res.status(500).json({ error: error.message })
     }
@@ -24,7 +24,7 @@ export default withAuth(async function handler(req, res) {
                 ${tags || []}::text[], ${priority || null}, ${link || ''},
                 ${due || null}, ${due_time || null}, ${JSON.stringify(history || [])}::jsonb)
         RETURNING *`
-      return res.status(201).json(rows[0])
+      return res.status(201).json(dateOnly(rows[0]))
     } catch (error) {
       return res.status(500).json({ error: error.message })
     }

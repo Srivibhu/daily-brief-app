@@ -1,5 +1,5 @@
 import { withAuth } from '../../../lib/auth'
-import { sql } from '../../../lib/db'
+import { sql, dateOnly } from '../../../lib/db'
 
 export default withAuth(async function handler(req, res) {
   const { id } = req.query
@@ -8,7 +8,7 @@ export default withAuth(async function handler(req, res) {
   // Ownership check
   const { rows } = await sql`
     SELECT * FROM tasks WHERE id = ${id} AND user_id = ${userId} LIMIT 1`
-  const existing = rows[0]
+  const existing = dateOnly(rows[0])
   if (!existing) return res.status(404).json({ error: 'Task not found' })
 
   if (req.method === 'GET') {
@@ -38,7 +38,7 @@ export default withAuth(async function handler(req, res) {
           completed_at = ${m.completed_at}
         WHERE id = ${id}
         RETURNING *`
-      return res.status(200).json(out[0])
+      return res.status(200).json(dateOnly(out[0]))
     } catch (error) {
       return res.status(500).json({ error: error.message })
     }
