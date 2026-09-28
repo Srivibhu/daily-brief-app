@@ -10,7 +10,7 @@ function Colors({ value, onChange }) {
 }
 
 export default function TagModal({ tags, setTags, onClose }) {
-  const [name, setName] = useState(''), [color, setColor] = useState('#3b82f6')
+  const [name, setName] = useState(''), [color, setColor] = useState('#6f8db3')
   const [editId, setEditId] = useState(null), [eName, setEName] = useState(''), [eColor, setEColor] = useState('')
 
   async function create() {

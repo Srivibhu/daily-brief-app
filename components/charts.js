@@ -36,7 +36,7 @@ export function Donut({ done, inprog, todo }) {
 export function WeekBars({ labels, data }) {
   const ref = useChart(() => ({
     type: 'bar',
-    data: { labels, datasets: [{ data, backgroundColor: 'rgba(167,139,250,0.65)', borderColor: '#a78bfa', borderWidth: 1, borderRadius: 2, hoverBackgroundColor: '#a78bfa' }] },
+    data: { labels, datasets: [{ data, backgroundColor: v('--purple') + 'a6', borderColor: v('--purple'), borderWidth: 1, borderRadius: 2, hoverBackgroundColor: v('--purple') }] },
     options: { responsive: true, maintainAspectRatio: false, animation: false,
       plugins: { legend: { display: false }, tooltip: { ...tooltip(), callbacks: { label: c => `${c.raw} min` } } },
       scales: {

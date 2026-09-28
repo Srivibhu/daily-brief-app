@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS tags (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  color TEXT NOT NULL DEFAULT '#3b82f6',
+  color TEXT NOT NULL DEFAULT '#6f8db3',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, name)
 );
@@ -56,11 +56,11 @@ CREATE OR REPLACE FUNCTION seed_default_tags()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO tags (user_id, name, color) VALUES
-    (NEW.id, 'Work',     '#3b82f6'),
-    (NEW.id, 'Study',    '#06b6d4'),
-    (NEW.id, 'Health',   '#22c55e'),
-    (NEW.id, 'Urgent',   '#ef4444'),
-    (NEW.id, 'Personal', '#f59e0b');
+    (NEW.id, 'Work',     '#6f8db3'),
+    (NEW.id, 'Study',    '#5f9c9c'),
+    (NEW.id, 'Health',   '#6c9a7c'),
+    (NEW.id, 'Urgent',   '#c47a72'),
+    (NEW.id, 'Personal', '#c49a55');
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
