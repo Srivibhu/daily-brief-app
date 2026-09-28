@@ -6,6 +6,7 @@ import CalendarTab from '../components/CalendarTab'
 import AnalyticsTab from '../components/AnalyticsTab'
 import Sidebar from '../components/Sidebar'
 import TagModal from '../components/TagModal'
+import ThemeToggle from '../components/ThemeToggle'
 import { useTimer } from '../lib/useTimer'
 import { useReminders } from '../lib/useReminders'
 import { api, todayStr, dateStr, statusOf, urgencyInfo, PRIORITY_CYCLE, PRIORITY_SORT } from '../lib/util'
@@ -187,6 +188,7 @@ export default function Dashboard() {
         </div>
         <div className="top-actions">
           <span className="user-chip">@{user?.username}</span>
+          <ThemeToggle />
           <button className="btn ghost sm" onClick={() => setShowTags(true)}>🏷 Tags</button>
           <button className="btn ghost sm" onClick={exportData}>Export</button>
           <button className="btn ghost sm" onClick={logout}>Sign out</button>

@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react'
+import { useTheme } from '../lib/theme'
 
 // Builds a Chart.js chart on a canvas; rebuilt whenever `deps` change.
 // chart.js is imported lazily so nothing touches the DOM during SSR.
 function useChart(makeConfig, deps) {
   const ref = useRef(null)
+  const theme = useTheme() // rebuild with the new palette when the theme flips
   useEffect(() => {
     let chart, dead = false
     import('chart.js/auto').then(({ default: Chart }) => {
@@ -11,7 +13,7 @@ function useChart(makeConfig, deps) {
       chart = new Chart(ref.current, makeConfig())
     })
     return () => { dead = true; if (chart) chart.destroy() }
-  }, deps) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [...deps, theme]) // eslint-disable-line react-hooks/exhaustive-deps
   return ref
 }
 
