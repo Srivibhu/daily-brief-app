@@ -25,10 +25,10 @@ export default function AnalyticsTab({ tasks, sessions }) {
   const recent = tasks.filter(t => t.progress === 100).sort((a, b) => (b.completed_at || '').localeCompare(a.completed_at || '')).slice(0, 10)
 
   const stats = [
-    ['Tasks this week', tw.scheduled], ['Completed this week', tw.completed, '#22c55e'],
+    ['Tasks this week', tw.scheduled], ['Completed this week', tw.completed, 'var(--green)'],
     ['Completion rate', tw.scheduled ? Math.round(tw.completed / tw.scheduled * 100) + '%' : '—'],
-    ['vs last week', pct === null ? '—' : `${pct > 0 ? '+' : ''}${pct}%`, pct === null ? undefined : pct >= 0 ? '#22c55e' : '#ef4444'],
-    ['Total focus (90d)', fmtMins(total), '#a78bfa'], ['Focus days', days], ['Avg focus / day', days ? fmtMins(Math.round(total / days)) : '—'], ['All tasks', tasks.length],
+    ['vs last week', pct === null ? '—' : `${pct > 0 ? '+' : ''}${pct}%`, pct === null ? undefined : pct >= 0 ? 'var(--green)' : 'var(--red)'],
+    ['Total focus (90d)', fmtMins(total), '#8b6fc4'], ['Focus days', days], ['Avg focus / day', days ? fmtMins(Math.round(total / days)) : '—'], ['All tasks', tasks.length],
   ]
   return (
     <div>
@@ -41,7 +41,7 @@ export default function AnalyticsTab({ tasks, sessions }) {
         <div className="bar-row" key={w.key}>
           <div style={{ width: 62, textAlign: 'right' }}>W{w.week} '{String(w.year).slice(2)}</div>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <div className="bar-track"><div className="bar-fill" style={{ width: (w.scheduled / max * 100) + '%', background: '#333' }} /></div>
+            <div className="bar-track"><div className="bar-fill" style={{ width: (w.scheduled / max * 100) + '%', background: 'var(--s4)' }} /></div>
             <div className="bar-track"><div className="bar-fill" style={{ width: (w.completed / max * 100) + '%', background: 'var(--blue)' }} /></div>
           </div>
           <div style={{ width: 44 }}>{w.completed}/{w.scheduled}</div>
@@ -51,7 +51,7 @@ export default function AnalyticsTab({ tasks, sessions }) {
       {!recent.length && <div className="empty">No completed tasks yet</div>}
       {recent.map(t => (
         <div className="cal-task-row" key={t.id}>
-          <span style={{ color: '#22c55e', fontSize: 12 }}>✓</span>
+          <span style={{ color: 'var(--green)', fontSize: 12 }}>✓</span>
           <span className="cal-task-name" style={{ color: 'var(--sub)' }}>{t.name}</span>
           <span style={{ fontFamily: 'var(--sans)', fontSize: 10, color: 'var(--sub)' }}>{t.completed_at}</span>
         </div>

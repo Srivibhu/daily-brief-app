@@ -38,7 +38,7 @@ export default function CalendarTab({ tasks, tags }) {
             <div key={day} className={`cal-cell${ds === today ? ' today' : ''}${sel === day ? ' selected' : ''}`} onClick={() => setSel(sel === day ? null : day)}>
               <div className="cal-day">{day}</div>
               <div className="cal-dots">
-                {(byDay[day] || []).slice(0, 5).map(t => <div key={t.id} className="cal-dot" style={{ background: (urgencyInfo(t.due) || {}).color || '#3b82f6' }} />)}
+                {(byDay[day] || []).slice(0, 5).map(t => <div key={t.id} className="cal-dot" style={{ background: (urgencyInfo(t.due) || {}).color || 'var(--blue)' }} />)}
               </div>
             </div>
           )
@@ -52,7 +52,7 @@ export default function CalendarTab({ tasks, tags }) {
             const u = urgencyInfo(t.due), s = statusOf(t)
             return (
               <div className="cal-task-row" key={t.id}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, display: 'inline-block', background: s === 'done' ? '#22c55e' : s === 'inprog' ? '#f59e0b' : '#333' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, display: 'inline-block', background: s === 'done' ? 'var(--green)' : s === 'inprog' ? 'var(--amber)' : 'var(--dim)' }} />
                 <span className="cal-task-name">{t.name}</span>
                 {u && <span style={{ fontFamily: 'var(--sans)', fontSize: 10, fontWeight: 700, color: u.color }}>{u.label}</span>}
                 {(t.tags || []).map(chip)}

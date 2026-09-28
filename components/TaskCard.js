@@ -31,7 +31,7 @@ function NoteEditor({ html, onSave }) {
     if (cmd === 'bullet') document.execCommand('insertUnorderedList')
     if (cmd === 'number') document.execCommand('insertOrderedList')
     if (cmd === 'checklist') document.execCommand('insertHTML', false, '<div class="check-item"><input type="checkbox"> <span>Item</span></div>')
-    if (cmd === 'code') document.execCommand('insertHTML', false, '<code style="background:#161616;padding:1px 5px;border-radius:3px;font-family:monospace;font-size:12px;color:#93c5fd"> </code>')
+    if (cmd === 'code') document.execCommand('insertHTML', false, '<code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:12px;color:var(--blue)"> </code>')
     flush()
   }
   return (

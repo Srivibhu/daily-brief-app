@@ -3,7 +3,7 @@ import { WeekBars } from './charts'
 import { todayStr, dateStr } from '../lib/util'
 
 const CIRC = 2 * Math.PI * 85
-const RING = { focus: '#3b82f6', short: '#22c55e', long: '#a78bfa' }
+const RING = { focus: 'var(--blue)', short: 'var(--green)', long: '#8b6fc4' }
 const LABEL = { focus: 'Focus', short: 'Short Break', long: 'Long Break' }
 const GOAL = 100
 
@@ -80,7 +80,7 @@ export default function FocusTab({ timer, tasks, sessions, focusTaskId, setFocus
           {!today.length && <div className="empty" style={{ padding: '8px 0', fontSize: 12 }}>No sessions yet — start the timer!</div>}
           {[...today].reverse().map(s => (
             <div className="slog-item" key={s.id}>
-              <div className="slog-dot" style={s.completed ? undefined : { background: '#3a3a3a' }} />
+              <div className="slog-dot" style={s.completed ? undefined : { background: 'var(--dim)' }} />
               <div className="slog-text">
                 {s.task_name && <><span style={{ color: 'var(--text)' }}>{s.task_name}</span> · </>}
                 {s.manual ? 'Manual entry' : s.completed ? 'Full session' : 'Partial'}

@@ -15,18 +15,20 @@ function useChart(makeConfig, deps) {
   return ref
 }
 
-const TOOLTIP = { backgroundColor: '#161616', titleColor: '#555', bodyColor: '#e8e8e8', borderColor: '#2a2a2a', borderWidth: 1 }
-const TICK = { font: { size: 9, family: 'Arial' }, color: '#444' }
+// Palette comes from the CSS variables so charts follow the page theme
+const v = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+const tooltip = () => ({ backgroundColor: v('--s1'), titleColor: v('--sub'), bodyColor: v('--text'), borderColor: v('--b1'), borderWidth: 1 })
+const tick = () => ({ font: { size: 9, family: 'Arial' }, color: v('--sub') })
 
 export function Donut({ done, inprog, todo }) {
   const ref = useChart(() => ({
     type: 'doughnut',
     data: {
       labels: ['Done', 'In Progress', 'To Do'],
-      datasets: [{ data: [done, inprog, todo || (!done && !inprog ? 1 : 0)], backgroundColor: ['#22c55e', '#f59e0b', '#1e1e1e'], borderWidth: 0, hoverOffset: 3 }],
+      datasets: [{ data: [done, inprog, todo || (!done && !inprog ? 1 : 0)], backgroundColor: [v('--green'), v('--amber'), v('--s4')], borderWidth: 0, hoverOffset: 3 }],
     },
     options: { responsive: true, maintainAspectRatio: false, cutout: '74%', animation: false,
-      plugins: { legend: { display: false }, tooltip: { ...TOOLTIP, callbacks: { label: c => `${c.label}: ${c.raw}` } } } },
+      plugins: { legend: { display: false }, tooltip: { ...tooltip(), callbacks: { label: c => `${c.label}: ${c.raw}` } } } },
   }), [done, inprog, todo])
   return <canvas ref={ref} />
 }
@@ -36,10 +38,10 @@ export function WeekBars({ labels, data }) {
     type: 'bar',
     data: { labels, datasets: [{ data, backgroundColor: 'rgba(167,139,250,0.65)', borderColor: '#a78bfa', borderWidth: 1, borderRadius: 2, hoverBackgroundColor: '#a78bfa' }] },
     options: { responsive: true, maintainAspectRatio: false, animation: false,
-      plugins: { legend: { display: false }, tooltip: { ...TOOLTIP, callbacks: { label: c => `${c.raw} min` } } },
+      plugins: { legend: { display: false }, tooltip: { ...tooltip(), callbacks: { label: c => `${c.raw} min` } } },
       scales: {
-        y: { ticks: { ...TICK, callback: v => v + 'm' }, grid: { color: '#161616' }, border: { color: '#161616' }, beginAtZero: true },
-        x: { ticks: TICK, grid: { display: false }, border: { color: '#161616' } },
+        y: { ticks: { ...tick(), callback: v => v + 'm' }, grid: { color: v('--b2') }, border: { color: v('--b2') }, beginAtZero: true },
+        x: { ticks: tick(), grid: { display: false }, border: { color: v('--b2') } },
       } },
   }), [labels.join('|'), data.join('|')])
   return <canvas ref={ref} />
@@ -48,12 +50,12 @@ export function WeekBars({ labels, data }) {
 export function MiniLine({ labels, data }) {
   const ref = useChart(() => ({
     type: 'line',
-    data: { labels, datasets: [{ data, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.06)', borderWidth: 1.5, pointRadius: 2, pointBackgroundColor: '#3b82f6', fill: true, tension: 0.3 }] },
+    data: { labels, datasets: [{ data, borderColor: v('--blue'), backgroundColor: v('--blue') + '14', borderWidth: 1.5, pointRadius: 2, pointBackgroundColor: v('--blue'), fill: true, tension: 0.3 }] },
     options: { responsive: true, maintainAspectRatio: false, animation: false,
-      plugins: { legend: { display: false }, tooltip: { ...TOOLTIP, callbacks: { label: c => `${c.parsed.y}%` } } },
+      plugins: { legend: { display: false }, tooltip: { ...tooltip(), callbacks: { label: c => `${c.parsed.y}%` } } },
       scales: {
-        y: { min: 0, max: 100, ticks: { ...TICK, stepSize: 50, callback: v => v + '%' }, grid: { color: '#161616' }, border: { color: '#161616' } },
-        x: { ticks: TICK, grid: { display: false }, border: { color: '#161616' } },
+        y: { min: 0, max: 100, ticks: { ...tick(), stepSize: 50, callback: v => v + '%' }, grid: { color: v('--b2') }, border: { color: v('--b2') } },
+        x: { ticks: tick(), grid: { display: false }, border: { color: v('--b2') } },
       } },
   }), [labels.join('|'), data.join('|')])
   return <canvas ref={ref} />
