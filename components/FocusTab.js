@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { WeekBars } from './charts'
+import PixelTimer from './PixelTimer'
 import { todayStr, dateStr } from '../lib/util'
 
-const CIRC = 2 * Math.PI * 85
-const RING = { focus: 'url(#ring-focus)', short: 'url(#ring-short)', long: 'url(#ring-long)' }
 const LABEL = { focus: 'Focus', short: 'Short Break', long: 'Long Break' }
 const GOAL = 100
 
@@ -36,23 +35,12 @@ export default function FocusTab({ timer, tasks, sessions, focusTaskId, setFocus
             </button>
           ))}
         </div>
-        <div className={`timer-ring-wrap${timer.running ? ' running' : ''}`}>
-          <svg className="timer-svg" width="184" height="184" viewBox="0 0 180 180">
-            <defs>
-              <linearGradient id="ring-focus" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" style={{ stopColor: 'var(--m-soft)' }} /><stop offset="100%" style={{ stopColor: 'var(--m-main)' }} /></linearGradient>
-              <linearGradient id="ring-short" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" style={{ stopColor: 'var(--green)' }} /><stop offset="100%" style={{ stopColor: 'var(--m-soft)' }} /></linearGradient>
-              <linearGradient id="ring-long" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" style={{ stopColor: 'var(--m-main)' }} /><stop offset="100%" style={{ stopColor: 'var(--m-deep)' }} /></linearGradient>
-            </defs>
-            <circle className="timer-ring-bg" cx="90" cy="90" r="85" />
-            <circle className="timer-ring-prog" cx="90" cy="90" r="85"
-              style={{ strokeDashoffset: CIRC * (1 - timer.secs / timer.total), stroke: RING[timer.mode] }} />
-          </svg>
-          <div className="timer-center">
-            <div className="timer-display">{String(Math.floor(timer.secs / 60)).padStart(2, '0')}:{String(timer.secs % 60).padStart(2, '0')}</div>
-            <div className="timer-mode-label">{LABEL[timer.mode]}</div>
-            <div className="timer-session-dots">
-              {[0, 1, 2, 3].map(i => <div key={i} className={`session-dot${i < dots ? ' done' : ''}`} />)}
-            </div>
+        <div className={`timer-stage${timer.running ? ' running' : ''}`}>
+          <PixelTimer mode={timer.mode} running={timer.running} secs={timer.secs} total={timer.total} count={timer.count} />
+          <div className="timer-display">{String(Math.floor(timer.secs / 60)).padStart(2, '0')}:{String(timer.secs % 60).padStart(2, '0')}</div>
+          <div className="timer-mode-label">{LABEL[timer.mode]}</div>
+          <div className="timer-session-dots">
+            {[0, 1, 2, 3].map(i => <div key={i} className={`session-dot${i < dots ? ' done' : ''}`} />)}
           </div>
         </div>
         <div className="timer-controls">

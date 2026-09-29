@@ -7,11 +7,12 @@ import AnalyticsTab from '../components/AnalyticsTab'
 import Sidebar from '../components/Sidebar'
 import TagModal from '../components/TagModal'
 import ThemeToggle from '../components/ThemeToggle'
+import { PixelTomato } from '../components/PixelTimer'
 import { useTimer } from '../lib/useTimer'
 import { useReminders } from '../lib/useReminders'
 import { api, todayStr, dateStr, statusOf, urgencyInfo, PRIORITY_CYCLE, PRIORITY_SORT } from '../lib/util'
 
-const TABS = [['tasks', 'Tasks'], ['focus', '🍅 Focus'], ['calendar', 'Calendar'], ['analytics', 'Analytics']]
+const TABS = [['tasks', 'Tasks'], ['focus', <span className="tab-label"><PixelTomato />Focus</span>], ['calendar', 'Calendar'], ['analytics', 'Analytics']]
 
 export default function Dashboard() {
   const router = useRouter()
