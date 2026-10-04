@@ -7,11 +7,11 @@ export default function PixelTimer({ mode, running, secs, total, count, scale = 
   const st = useRef({ f: 0, cheer: 0 })
   const props = useRef({})
   props.current = { mode, running, frac: total ? secs / total : 1 }
-  const first = useRef(true)
+  const lastCount = useRef(count)
 
   useEffect(() => {
-    if (first.current) { first.current = false; return }
-    st.current.cheer = 30
+    if (count > lastCount.current) st.current.cheer = 30
+    lastCount.current = count
   }, [count])
 
   useEffect(() => {

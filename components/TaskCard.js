@@ -123,7 +123,7 @@ export default function TaskCard({ task: t, idx = 0, tags, open, onToggle, onPro
             <input type="range" min="0" max="100" step="5" value={t.progress} onChange={e => onProgress(t.id, +e.target.value)} />
             <span style={{ fontFamily: 'var(--sans)', fontSize: 11, fontWeight: 700, color: 'var(--sub)', width: 30, textAlign: 'right' }}>{t.progress}%</span>
           </div>
-          <div style={{ display: 'flex', gap: 4, marginBottom: 12, marginLeft: 62 }}>
+          <div className="prog-nudges">
             {[-50, -25, 25, 50].map(d => (
               <button key={d} className="prog-nudge" onClick={() => onProgress(t.id, Math.max(0, Math.min(100, t.progress + d)))}>
                 {d > 0 ? '+' : '−'}{Math.abs(d)}%

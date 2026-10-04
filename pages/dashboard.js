@@ -227,9 +227,9 @@ export default function Dashboard() {
                   <div className="filter-pills">
                     {pills.map(o => <button key={o.v} className={`pill${filter === o.v ? ' active' : ''}`} style={pillStyle(o, filter === o.v)} onClick={() => setFilter(o.v)}>{o.l}</button>)}
                   </div>
-                  <select value={sort} onChange={e => setSort(e.target.value)} style={{ background: 'transparent', border: '1px solid var(--b2)', borderRadius: 20, color: 'var(--sub)', fontFamily: 'var(--sans)', fontSize: 11, padding: '3px 10px', cursor: 'pointer', outline: 'none', width: 'auto' }}>
-                    <option value="due">Sort: Due</option><option value="created">Sort: Created</option>
-                    <option value="priority">Sort: Priority</option><option value="progress">Sort: Progress</option>
+                  <select value={sort} aria-label="Sort tasks" onChange={e => setSort(e.target.value)} style={{ background: 'transparent', border: '1px solid var(--b2)', borderRadius: 20, color: 'var(--sub)', fontFamily: 'var(--sans)', fontSize: 11, padding: '3px 10px', cursor: 'pointer', outline: 'none', width: 'auto' }}>
+                    <option value="due">⇅ Due</option><option value="created">⇅ Newest</option>
+                    <option value="priority">⇅ Priority</option><option value="progress">⇅ Progress</option>
                   </select>
                 </div>
 

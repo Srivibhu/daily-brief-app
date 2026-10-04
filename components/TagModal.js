@@ -3,7 +3,7 @@ import { api, PRESET_COLORS } from '../lib/util'
 
 function Colors({ value, onChange }) {
   return (
-    <div className="color-dots" style={{ width: 100 }}>
+    <div className="color-dots">
       {PRESET_COLORS.map(c => <button key={c} className={`color-dot${value === c ? ' sel' : ''}`} style={{ background: c }} onClick={() => onChange(c)} />)}
     </div>
   )
@@ -32,9 +32,9 @@ export default function TagModal({ tags, setTags, onClose }) {
       <div className="modal">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2>Tag editor</h2>
-          <button className="icon-btn" onClick={onClose}>×</button>
+          <button className="icon-btn modal-close" onClick={onClose} aria-label="Close">×</button>
         </div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+        <div className="tag-add-row">
           <input className="due-input" style={{ flex: 1 }} placeholder="Tag name" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && create()} />
           <Colors value={color} onChange={setColor} />
           <button className="btn" onClick={create}>Add</button>
