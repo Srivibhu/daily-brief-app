@@ -41,6 +41,7 @@ export default function AnalyticsTab({ tasks, sessions, activity = {} }) {
       <dl className="figures">
         {stats.map(([l, v, c]) => <div className="figure" key={l}><dd style={{ color: c || 'var(--text)' }}>{v}</dd><dt>{l}</dt></div>)}
       </dl>
+      <div className="stats-main">
       <div className="art-label">Last 4 weeks · {cells.filter(c => c.c > 0).length} active days</div>
       <div className="activity-grid wide">{cells.map(c => <div key={c.k} className={`act-cell act-${c.l}`} title={`${c.k}: ${c.c}`} />)}</div>
       <section className="panel">
@@ -68,6 +69,7 @@ export default function AnalyticsTab({ tasks, sessions, activity = {} }) {
         </div>
       ))}
       </section>
+      </div>
     </div>
   )
 }

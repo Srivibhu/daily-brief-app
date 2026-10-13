@@ -12,6 +12,7 @@ import AccountModal from '../components/AccountModal'
 import PetCard, { PetPortrait } from '../components/PetCard'
 import ShopSheet from '../components/ShopSheet'
 import Wallet from '../components/Wallet'
+import { PetHud, FocusHud } from '../components/Hud'
 import { computePet, setPetState, petReact, MOODS } from '../lib/pet'
 import { useTheme, setTheme } from '../lib/theme'
 import { setScenePan } from '../components/SceneBackdrop'
@@ -27,10 +28,13 @@ const mmss = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 6
 
 // phone layout = the swipeable pager (kept in step with the CSS breakpoint)
 const PHONE_Q = '(max-width: 699px)'
-function usePhone() {
-  return useSyncExternalStore(cb => { const m = window.matchMedia(PHONE_Q); m.addEventListener('change', cb); return () => m.removeEventListener('change', cb) },
-    () => window.matchMedia(PHONE_Q).matches, () => false)
+function useMedia(q) {
+  return useSyncExternalStore(cb => { const m = window.matchMedia(q); m.addEventListener('change', cb); return () => m.removeEventListener('change', cb) },
+    () => window.matchMedia(q).matches, () => false)
 }
+const usePhone = () => useMedia(PHONE_Q)
+// wide screens: the layout sits around the scene's landmarks instead of a centred column
+const useWide = () => useMedia('(min-width: 1100px)')
 
 export default function Dashboard() {
   const router = useRouter()
@@ -59,6 +63,7 @@ export default function Dashboard() {
   const pending = useRef({})
   const pager = useRef(null)
   const phone = usePhone()
+  const wide = useWide()
 
   // ── Boot ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -281,7 +286,8 @@ export default function Dashboard() {
 
   const hello = (
     <section className="hello">
-      <div className="dateline">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+      <div className="dateline">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+        {phone && petData && <button type="button" className="chip wallet-chip" onClick={() => setShowShop(true)} aria-label="Open the shop"><Wallet lilies={petData.lilies} pearls={petData.pearls} /></button>}</div>
       <h1>{h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}{name && `, ${name}`}</h1>
       <p className="summary">
         {nDueToday ? <><b>{plural(nDueToday, 'task')}</b> due today</> : 'Nothing due today'}
@@ -291,8 +297,28 @@ export default function Dashboard() {
     </section>
   )
 
-  const tasksView = (
-    <>
+  // wide: the first category gets the strip between the egg house and the falls, the rest go right of the falls
+  const nLeft = groups.length > 1 ? Math.max(1, Math.round(groups.length / 3)) : 0
+  const stacks = gs => <CategoryStacks groups={gs} expanded={expanded} onToggleExpand={toggleExpand} onOpen={setDetailId} onProgress={setProgress} />
+  const doneBlock = done.length > 0 && (
+    <section className="done-section">
+      <button className="done-toggle" aria-expanded={doneOpen} onClick={() => setDoneOpen(!doneOpen)}>
+        {doneOpen ? '▾' : '▸'} Done <span className="filter-n">{done.length}</span>
+      </button>
+      {doneOpen && (
+        <ul className="done-list">
+          {done.map(t => (
+            <li key={t.id}>
+              <button className="card-check done" aria-label="Mark incomplete" onClick={() => setProgress(t.id, 0)} />
+              <button className="done-name" onClick={() => setDetailId(t.id)}>{t.name}</button>
+              <span className="done-when">{t.completed_at}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+  const boardHead = (
       <div className="board-head">
         <h2 className="board-title">Tasks</h2>
         <div className="chips">
@@ -311,33 +337,23 @@ export default function Dashboard() {
           </label>
         </div>
       </div>
-
-      {!groups.length && (
-        <p className="empty">{filter === 'all' ? <>No open tasks. Press <kbd>N</kbd> or the <b>+</b> below to add one.</> : 'Nothing matches this filter.'}</p>
-      )}
-      <CategoryStacks groups={groups} expanded={expanded} onToggleExpand={toggleExpand} onOpen={setDetailId} onProgress={setProgress} />
-
-      {done.length > 0 && (
-        <section className="done-section">
-          <button className="done-toggle" aria-expanded={doneOpen} onClick={() => setDoneOpen(!doneOpen)}>
-            {doneOpen ? '▾' : '▸'} Done <span className="filter-n">{done.length}</span>
-          </button>
-          {doneOpen && (
-            <ul className="done-list">
-              {done.map(t => (
-                <li key={t.id}>
-                  <button className="card-check done" aria-label="Mark incomplete" onClick={() => setProgress(t.id, 0)} />
-                  <button className="done-name" onClick={() => setDetailId(t.id)}>{t.name}</button>
-                  <span className="done-when">{t.completed_at}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
+  )
+  const emptyNote = !groups.length && (
+    <p className="empty">{filter === 'all' ? <>No open tasks. Press <kbd>N</kbd> or the <b>+</b> below to add one.</> : 'Nothing matches this filter.'}</p>
+  )
+  const tasksView = wide && !phone ? (
+    <>
+      <div className="zone-l">{stacks(groups.slice(0, nLeft))}{doneBlock}</div>
+      <div className="zone-r">{boardHead}{emptyNote}{stacks(groups.slice(nLeft))}</div>
+    </>
+  ) : (
+    <>
+      {boardHead}
+      {emptyNote}
+      {stacks(groups)}
+      {doneBlock}
     </>
   )
-
   const TITLES = { focus: 'Focus', calendar: 'Calendar', analytics: 'Stats' }
   const view = k => k === 'tasks' ? tasksView : (
     <section className={`tabview tab-${k}`} aria-label={TITLES[k]}>
@@ -352,7 +368,7 @@ export default function Dashboard() {
   )
 
   return (
-    <div className={`shell${phone ? ' paged' : ''}`}>
+    <div className={`shell${phone ? ' paged' : wide ? ' zoned' : ''}`}>
       {phone ? (
         // phones: the four pages sit side by side; swipe (or tap the hotbar) and the scene walks with you
         <div className="pager" ref={pager} onScroll={onPagerScroll}>
@@ -366,6 +382,9 @@ export default function Dashboard() {
       ) : (
         <>
           {hello}
+          {wide && <PetHud pet={pet} name={petName} skin={skin} lilies={petData?.lilies || 0} pearls={petData?.pearls || 0}
+            onOpen={() => setShowPet(true)} onShop={() => setShowShop(true)} />}
+          {wide && tab !== 'focus' && <FocusHud timer={timer} todayMins={todayMins} onOpen={() => setTab('focus')} />}
           <main className="board">{view(tab)}</main>
         </>
       )}

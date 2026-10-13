@@ -772,3 +772,76 @@ kbd{font-family:var(--pixel);font-size:.9em;padding:0 5px;border:1px solid curre
 .pt-bar i{width:12px;height:10px;background:var(--parch-2)}
 .pt-bar i.on{background:var(--btn)}
 .hb-pet-mini{height:20px;width:auto;image-rendering:pixelated;display:block}
+
+/* ══ Wide screens: the layout sits around the scene (egg house · falls · gazebo) ══
+   SceneBackdrop publishes where those landmarks are on screen as --egg-l/--egg-r/--egg-b/--falls-l/--falls-r */
+@media(min-width:1100px){
+  body:has(.shell.zoned){padding:0}
+  .shell.zoned{max-width:none;margin:0;padding:30px 28px 130px 0;display:grid;align-items:start;
+    grid-template-columns:calc(var(--egg-r,340px) + 18px) calc(var(--falls-l,560px) - var(--egg-r,340px) - 36px) calc(var(--falls-r,790px) - var(--falls-l,560px) + 36px) minmax(0,1fr);
+    grid-template-rows:176px auto}
+  .zoned .hello{grid-column:1/4;grid-row:1;margin:0;padding-left:max(24px,var(--egg-l,170px));padding-right:12px}
+  .zoned .hello h1{font-size:42px}
+  .zoned .summary{max-width:46ch}
+  .zoned .focus-hud{grid-column:4;grid-row:1;justify-self:end;width:250px}
+  .zoned .pet-hud{grid-column:1;grid-row:2;justify-self:end;width:min(214px,calc(100% - 24px));margin-right:10px;margin-top:max(0px,calc(var(--egg-b,500px) - 206px + 10px))}
+  .zoned .board,.zoned .tabview,.zoned .focus-layout,.zoned .stats-view{display:contents}
+  .zoned .zone-l,.zoned .timer-panel,.zoned .figures{grid-column:2;grid-row:2;min-width:0}
+  .zoned .zone-r,.zoned .panel-col,.zoned .stats-main,.zoned .cal-main{grid-column:4;grid-row:2;min-width:0}
+  .zoned .cal-view{display:contents}
+  .zoned .tab-calendar .cal-selected-tasks{grid-column:2;grid-row:2;margin-top:52px;min-width:0}
+  .zoned .zone-l{padding-top:56px}
+  .zoned .zone-l .stacks{grid-template-columns:minmax(0,1fr);gap:34px}
+  .zoned .zone-r .stacks{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:36px 24px}
+  .zoned .zone-l .done-section{margin-top:30px}
+  .zoned .board-head{margin-bottom:20px}
+  /* Focus: the pet timer stands in the strip by the egg house, the numbers sit right of the falls */
+  .zoned .timer-panel{padding-top:0}
+  .zoned .tab-focus .timer-display{font-size:44px}
+  .zoned .tab-focus .task-link-row{max-width:100%}
+  .zoned .panel-col{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;align-items:start}
+  .zoned .panel-col .panel+.panel{margin-top:0}
+  /* Stats: figure tiles in the strip, everything else right of the falls */
+  .zoned .figures{grid-template-columns:1fr 1fr;gap:10px}
+  .zoned .figure dd{font-size:20px}
+  .zoned .stats-main .art-label:first-child{margin-top:0}
+}
+/* HUD cards */
+.pet-hud{padding:10px 12px 12px}
+.ph-main{display:flex;gap:10px;align-items:center;width:100%;background:none;border:0;padding:0;cursor:pointer;text-align:left;color:var(--text)}
+.ph-art{flex:0 0 52px;height:48px;display:flex;align-items:flex-end;justify-content:center;background:var(--parch-2);border:2px solid var(--ink);border-radius:6px;padding-bottom:4px}
+.ph-art .pet-portrait{max-height:40px;width:auto}
+.ph-text{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ph-text b{font-family:var(--pixel);font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph-mood{display:flex;align-items:center;gap:2px;font-family:var(--sans);font-size:12px;font-weight:600}
+.ph-mood i{width:7px;height:6px;border-radius:1px;background:color-mix(in srgb,var(--ink) 25%,transparent);margin-right:1px}
+.ph-mood i.on{background:#c0503f}.ph-mood.mood-content i.on{background:#c98a2c}.ph-mood.mood-sleepy i.on{background:#7d8aa0}
+.ph-grow{margin:10px 0 8px}
+.ph-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.chip-btn{font-family:var(--pixel);font-size:13px;font-weight:600;color:var(--text);background:var(--parch-2);border:2px solid var(--ink);border-radius:6px;box-shadow:0 2px 0 var(--ink);padding:3px 10px;cursor:pointer}
+.chip-btn:hover{background:var(--parch)}
+.focus-hud{padding:10px 14px 12px}
+.fh-head{font-family:var(--pixel);font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text);background:none;border:0;padding:0;cursor:pointer}
+.fh-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0}
+.fh-time{font-family:var(--pixel);font-size:34px;font-weight:700;color:var(--text);line-height:1}
+.fh-go{min-width:84px}
+.fh-go.running{background:var(--wood)}
+.fh-today{font-family:var(--sans);font-size:12.5px;color:var(--text)}
+.wallet-chip{margin-left:10px;padding:2px 8px;vertical-align:middle;cursor:pointer;text-shadow:none;letter-spacing:0;text-transform:none}
+.wallet-chip .wallet{font-size:12px;gap:8px}
+@media(min-width:1100px){
+  .zoned .cal-selected-tasks .cal-task-row{flex-wrap:wrap;row-gap:4px}
+  .zoned .cal-selected-tasks .cal-task-name{flex:1 1 calc(100% - 20px)}
+}
+@media(max-width:560px){
+  .hotbar{gap:3px;padding:4px}
+  .hb-pet{width:34px;padding:2px 1px}
+  .hb-pet .pet-portrait{height:18px}
+  .hb-add{width:38px}
+  .hb-btn{padding:5px 1px}
+  .hb-label{font-size:11px}
+  .hb-group+.hb-group{padding-left:3px;margin-left:0}
+  .hb-small .hb-btn{min-width:26px;padding:5px 2px}
+  .hb-small .pixel-icon{width:16px;height:auto}
+}
+@media(max-width:560px){.hb-group{gap:5px}.hb-label{font-size:10.5px}}
