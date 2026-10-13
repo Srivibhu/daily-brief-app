@@ -9,6 +9,8 @@ import AddTaskSheet from '../components/AddTaskSheet'
 import PixelIcon from '../components/PixelIcon'
 import TagModal from '../components/TagModal'
 import AccountModal from '../components/AccountModal'
+import PetCard, { PetPortrait } from '../components/PetCard'
+import { computePet, setPetState, petReact, MOODS } from '../lib/pet'
 import { useTheme, setTheme } from '../lib/theme'
 import { PixelTomato } from '../components/PixelTimer'
 import { setScenePan } from '../components/SceneBackdrop'
@@ -49,6 +51,9 @@ export default function Dashboard() {
   const [focusTaskId, setFocusTaskId] = useState(null)
   const [today, setToday] = useState(todayStr())
   const [adding, setAdding] = useState(false)
+  const [showPet, setShowPet] = useState(false)     // false | true | 'hatched'
+  const [petPreview, setPetPreview] = useState(null)
+  const [petName, setPetName] = useState('')
   const pending = useRef({})
   const pager = useRef(null)
   const phone = usePhone()
@@ -116,6 +121,16 @@ export default function Dashboard() {
     el.scrollTo({ left: PAGES.indexOf(k) * el.clientWidth, behavior: reduce ? 'auto' : 'smooth' })
   }
 
+  // ── The pet: grows with focus time, mood from the last 3 days ─────────────────
+  const pet = computePet({ sessions, tasks }, petPreview)
+  useEffect(() => { try { setPetName(localStorage.getItem('db-pet-name') || '') } catch {} }, [])
+  useEffect(() => { setPetState({ stage: pet.stage.key, mood: pet.mood }) }, [pet.stage.key, pet.mood])
+  useEffect(() => {
+    if (authLoading || !tasks.length || pet.real < 2) return
+    try { if (!localStorage.getItem('db-pet-hatched')) { localStorage.setItem('db-pet-hatched', '1'); setShowPet('hatched') } } catch {}
+  }, [pet.real, authLoading, tasks.length])
+  function namePet(n) { setPetName(n); try { localStorage.setItem('db-pet-name', n) } catch {} }
+
   // ── Activity ─────────────────────────────────────────────────────────────────
   function recordActivity() {
     const d = todayStr()
@@ -143,6 +158,7 @@ export default function Dashboard() {
     const history = [...(t.history || []).filter(h => h.date !== td), { date: td, progress: v }].slice(-14)
     updateTask(id, { progress: v, history })
     recordActivity()
+    if (v === 100 && t.progress < 100) petReact('task')
   }
 
   async function addTask(q) {
@@ -163,6 +179,7 @@ export default function Dashboard() {
       time_of_day: new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) }
     const data = await api('/api/focus', { method: 'POST', body })
     if (data?.id) { setSessions(ss => [data, ...ss]); recordActivity() }
+    if (completed) petReact('focus')
   }
   const timer = useTimer((m, c) => recordFocus(m, c))
   const manualLog = mins => { if (mins >= 1) recordFocus(mins, false, true) }
@@ -324,6 +341,11 @@ export default function Dashboard() {
 
       {/* the hotbar: every control, always in the same place */}
       <nav className="hotbar" aria-label="Main">
+        <button className={`hb-pet mood-${pet.mood}`} onClick={() => setShowPet(true)}
+          aria-label={`${(pet.idx >= 2 && petName) || pet.stage.name}, ${MOODS[pet.mood].name.toLowerCase()}`} title={`${(pet.idx >= 2 && petName) || pet.stage.name} · ${MOODS[pet.mood].name}`}>
+          <PetPortrait stage={pet.stage.key} mood={pet.mood} scale={2} />
+          <span className="hb-mood" aria-hidden="true">{[0, 1, 2].map(i => <i key={i} className={i < { happy: 3, content: 2, sleepy: 1 }[pet.mood] ? 'on' : ''} />)}</span>
+        </button>
         <button className="hb-add" onClick={() => setAdding(true)} aria-label="Add task (N)" title="Add task (N)">
           <PixelIcon name="plus" size={20} />
         </button>
@@ -349,6 +371,8 @@ export default function Dashboard() {
         onProgress={setProgress} onUpdate={updateTask} onDelete={deleteTask} />}
       {showAccount && <AccountModal user={user} onSaved={u => setUser(x => ({ ...x, ...u }))} onClose={() => setShowAccount(false)}
         onExport={exportData} onSignOut={logout} />}
+      {showPet && <PetCard pet={pet} name={petName} onName={namePet} hatched={showPet === 'hatched'} preview={petPreview}
+        onPreview={setPetPreview} onClose={() => setShowPet(false)} />}
       {showTags && <TagModal tags={tags} setTags={setTags} onClose={() => setShowTags(false)} />}
     </div>
   )

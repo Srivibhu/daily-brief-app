@@ -700,3 +700,39 @@ kbd{font-family:var(--pixel);font-size:.9em;padding:0 5px;border:1px solid curre
 .tab-calendar .cal-cell.today{border-color:var(--btn-d);box-shadow:0 3px 0 var(--btn-d)}
 .tab-focus .timer-mode-label{text-shadow:var(--outline2)}
 .tag{font-family:var(--pixel);font-size:11px;font-weight:600}
+
+/* ══ The pet: hotbar badge + card ══ */
+.hb-pet{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:48px;border:2px solid var(--ink);border-radius:7px;background:var(--parch-2);cursor:pointer;padding:3px 2px}
+.hb-pet:hover{background:var(--parch)}
+.hb-pet .pet-portrait{display:block;height:22px;width:auto;image-rendering:pixelated}
+.hb-mood{display:flex;gap:2px}
+.hb-mood i{width:6px;height:5px;border-radius:1px;background:color-mix(in srgb,var(--ink) 25%,transparent)}
+.hb-mood i.on{background:#c0503f}
+.mood-content .hb-mood i.on{background:#c98a2c}
+.mood-sleepy .hb-mood i.on{background:#7d8aa0}
+.pet-sheet{width:480px}
+.pet-hero{display:flex;gap:18px;align-items:center;margin:4px 0 16px}
+.pet-stage-art{flex:0 0 120px;height:110px;display:flex;align-items:flex-end;justify-content:center;background:var(--parch-2);border:2px solid var(--ink);border-radius:8px;padding-bottom:10px;
+  background-image:linear-gradient(to top,color-mix(in srgb,var(--leaf) 40%,var(--parch-2)) 0 14px,transparent 14px)}
+.pet-portrait{image-rendering:pixelated}
+.pet-facts p{font-family:var(--sans);font-size:13px;color:var(--text);margin:4px 0 8px;line-height:1.45}
+.pet-stage-name{font-family:var(--pixel);font-size:20px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+.pet-preview-tag{font-size:11px;font-weight:600;background:var(--ink);color:var(--parch);border-radius:3px;padding:1px 6px}
+.pet-mood{font-family:var(--sans);font-size:13px;color:var(--text);padding-left:12px;border-left:4px solid #c0503f}
+.pet-mood.mood-content{border-left-color:#c98a2c}.pet-mood.mood-sleepy{border-left-color:#7d8aa0}
+.pet-grow{margin-bottom:16px}
+.pet-grow-label{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:var(--sans);font-size:12.5px;color:var(--text);margin-bottom:6px}
+.pet-name-row{display:flex;gap:10px;align-items:center;margin-bottom:16px}
+.pet-name-row .field-input{flex:1;font-size:15px;font-family:var(--serif)}
+.pet-preview{border-top:2px dashed color-mix(in srgb,var(--ink) 30%,transparent);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.pet-preview-k{font-family:var(--pixel);font-size:14px;font-weight:700;color:var(--text)}
+.pet-preview-btns{display:flex;flex-wrap:wrap;gap:6px}
+.pet-preview-btns .seg-btn{font-family:var(--pixel);font-size:13px;color:var(--text);border:2px solid var(--ink);border-radius:6px;background:var(--parch);padding:3px 9px}
+.pet-preview-btns .seg-btn.active{background:var(--btn);color:#fff}
+.pet-preview small{font-family:var(--sans);font-size:12px;color:var(--text)}
+.pet-preview small .link-btn{font-size:12px;margin-left:6px;text-decoration:underline}
+@media(max-width:560px){
+  .hb-pet{width:40px;flex:0 0 auto}
+  .pet-hero{flex-direction:column;align-items:stretch}
+  .pet-stage-art{flex-basis:auto}
+}

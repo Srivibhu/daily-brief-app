@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useTheme } from '../lib/theme'
 import { createCritters } from '../lib/critters'
+import { createPet } from '../lib/pet'
 
 // The illustrated cliffside behind every page (public/scene/*.webp, one layout for day and night),
 // plus a small canvas layer, drawn at the art's own pixel size, that animates only the live parts.
@@ -87,13 +88,14 @@ export default function SceneBackdrop() {
     const stars = Array.from({ length: 26 }, () => ({ x: SCENE.sky.x0 + R() * (SCENE.sky.x1 - SCENE.sky.x0), y: 8 + R() * (SCENE.sky.y1 - 30), ph: Math.floor(R() * 60) }))
     const winPh = SCENE.windows.map(() => R() * 50)
     const critters = createCritters()
+    const pet = createPet()
     let f = 0, raf = 0, last = 0, alive = true
 
     function draw() {
       const dark = themeRef.current === 'dark'
       ctx.clearRect(0, 0, SCENE.w, SCENE.h)
       const img = dark ? nightImg.current : dayImg.current
-      if (reduced) { critters.draw(ctx, 0, dark, img, true); return }
+      if (reduced) { critters.draw(ctx, 0, dark, img, true); pet.draw(ctx, 0, dark, img, true); return }
 
       // falling water: soft light streaks sliding down each fall
       for (const st of streaks) {
@@ -122,17 +124,8 @@ export default function SceneBackdrop() {
       // dog, frogs, rabbits, birds
       critters.draw(ctx, f, dark, img, false)
 
-      // the egg: a little wobble every ~5 s
-      const w = f % 60
-      if (img && img.complete && w < 8) {
-        const e = SCENE.egg, ang = Math.sin(w / 8 * Math.PI * 3) * 0.09 * (1 - w / 8)
-        ctx.save()
-        ctx.translate(e.cx, e.cy + e.ry)
-        ctx.rotate(ang)
-        ctx.beginPath(); ctx.ellipse(0, -e.ry, e.rx + 1, e.ry + 1, 0, 0, Math.PI * 2); ctx.clip()
-        ctx.drawImage(img, e.cx - e.rx - 2, e.cy - e.ry - 2, e.rx * 2 + 4, e.ry * 2 + 4, -e.rx - 2, -e.ry * 2 - 2, e.rx * 2 + 4, e.ry * 2 + 4)
-        ctx.restore()
-      }
+      // the egg (or the bird it became)
+      pet.draw(ctx, f, dark, img, false)
 
       if (dark) {
         // windows breathe, lanterns glow, stars twinkle, fireflies drift
@@ -168,8 +161,8 @@ export default function SceneBackdrop() {
     if (!reduced) raf = requestAnimationFrame(loop)
     const onTheme = () => draw()
     dayImg.current?.addEventListener('load', onTheme); nightImg.current?.addEventListener('load', onTheme)
-    window.addEventListener('db-theme', onTheme)
-    return () => { alive = false; cancelAnimationFrame(raf); window.removeEventListener('db-theme', onTheme) }
+    window.addEventListener('db-theme', onTheme); window.addEventListener('db-scene', onTheme)
+    return () => { alive = false; cancelAnimationFrame(raf); window.removeEventListener('db-theme', onTheme); window.removeEventListener('db-scene', onTheme) }
   }, [])
 
   return (
