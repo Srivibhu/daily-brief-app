@@ -73,10 +73,10 @@ body{font-family:var(--serif);background:var(--bg);color:var(--text);min-height:
 
 /* The veil: no colour layer — the scene itself behind the content column, lightly blurred and calmed
    (light: a touch brighter, dark: a touch dimmer). It feathers back to full-strength pixel art at the sides. */
-:root{--veil-filter:blur(2px) brightness(1.32) saturate(.62) contrast(.86);
+:root{--veil-filter:none;
   /* text on the scene: a crisp one-pixel edge, like subtitles — no glow */
   --ink-edge:0 1px 0 rgba(255,255,248,.7),0 0 1px rgba(255,255,248,.5)}
-:root[data-theme="dark"]{--veil-filter:blur(2px) brightness(.58) saturate(.8);
+:root[data-theme="dark"]{--veil-filter:none;
   --ink-edge:0 1px 1px rgba(8,6,4,.7),0 0 2px rgba(8,6,4,.45)}
 .shell{text-shadow:var(--ink-edge)}
 .shell button,.shell input,.shell select{text-shadow:inherit}
