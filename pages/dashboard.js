@@ -59,6 +59,9 @@ export default function Dashboard() {
   const [petData, setPetData] = useState(null)    // /api/pet: name, skin, owned, balances, all-time totals
   const pending = useRef({})
   const pager = useRef(null)
+  const deleted = useRef(new Set())
+  const [toast, setToast] = useState(null)
+  const alertBar = text => { setToast(text); setTimeout(() => setToast(null), 4000) }
   const phone = usePhone()
   const wide = useWide()
 
@@ -172,6 +175,7 @@ export default function Dashboard() {
   // ── Tasks ────────────────────────────────────────────────────────────────────
   // Optimistic local update + debounced PATCH (patches for one task are merged)
   function updateTask(id, patch, delay = 250) {
+    if (deleted.current.has(id)) return
     setTasks(ts => ts.map(t => (t.id === id ? { ...t, ...patch } : t)))
     const p = (pending.current[id] ||= { patch: {}, timer: null })
     Object.assign(p.patch, patch)
@@ -200,8 +204,14 @@ export default function Dashboard() {
   }
 
   async function deleteTask(id) {
+    // drop any edit still waiting to be saved, so it can't land after the delete
+    const p = pending.current[id]; if (p) { clearTimeout(p.timer); delete pending.current[id] }
+    const gone = tasks.find(t => t.id === id)
+    deleted.current.add(id)
     setTasks(ts => ts.filter(t => t.id !== id))
-    await api(`/api/tasks/${id}`, { method: 'DELETE' })
+    const r = await api(`/api/tasks/${id}`, { method: 'DELETE' }).catch(() => ({ error: 'offline' }))
+    if (r?.error && gone) { deleted.current.delete(id); setTasks(ts => [gone, ...ts]); alertBar('Could not delete that task. Try again.') }
+    else refreshPetSoon()
   }
 
   // ── Focus ────────────────────────────────────────────────────────────────────
@@ -413,6 +423,7 @@ export default function Dashboard() {
         </div>
       </nav>
 
+      {toast && <div className="toast" role="status">{toast}</div>}
       {adding && <AddTaskSheet tags={tags} onAdd={addTask} onClose={() => setAdding(false)} />}
       {detailTask && <TaskDetail key={detailTask.id} task={detailTask} tags={tags} onClose={() => setDetailId(null)}
         onProgress={setProgress} onUpdate={updateTask} onDelete={deleteTask} />}

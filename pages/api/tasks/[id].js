@@ -50,8 +50,13 @@ export default withAuth(async function handler(req, res) {
   }
 
   if (req.method === 'DELETE') {
-    await sql`DELETE FROM tasks WHERE id = ${id}`
-    return res.status(204).end()
+    try {
+      await sql`DELETE FROM tasks WHERE id = ${id} AND user_id = ${userId}`
+      return res.status(204).end()
+    } catch (error) {
+      console.error(error)
+      return res.status(500).json({ error: 'Could not delete the task' })
+    }
   }
 
   return res.status(405).end()
