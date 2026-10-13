@@ -7,7 +7,7 @@ export default function CalendarTab({ tasks, tags }) {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
-  const [sel, setSel] = useState(null)
+  const [sel, setSel] = useState(now.getDate())
 
   const move = dir => {
     let m = month + dir, y = year
@@ -23,7 +23,8 @@ export default function CalendarTab({ tasks, tags }) {
   const chip = n => { const g = tags.find(x => x.name === n); return g && <span key={n} className="tag" style={{ background: g.color + '33', color: 'var(--text)', boxShadow: `inset 0 0 0 1px ${g.color}` }}>{g.name}</span> }
 
   return (
-    <div>
+    <div className="cal-view">
+      <div className="cal-main">
       <div className="cal-header">
         <span className="cal-title">{MONTHS[month]} {year}</span>
         <button className="cal-nav" onClick={() => move(-1)} aria-label="Previous month">‹</button>
@@ -44,6 +45,7 @@ export default function CalendarTab({ tasks, tags }) {
             </button>
           )
         })}
+      </div>
       </div>
       {sel && (
         <section className="panel cal-selected-tasks">

@@ -45,6 +45,10 @@ function placeScene() {
   const st = wrapEl.style
   st.width = b.width + 'px'; st.height = b.height + 'px'; st.top = b.top + 'px'; st.left = '0px'
   st.transform = `translate3d(${left}px,0,0)`
+  // where the landmarks are on screen, so the layout can sit around them (egg house, falls, gazebo)
+  const r = document.documentElement.style, X = ax => Math.round(left + ax * b.s) + 'px', Y = ay => Math.round(b.top + ay * b.s) + 'px'
+  r.setProperty('--egg-l', X(308)); r.setProperty('--egg-r', X(442)); r.setProperty('--egg-b', Y(432))
+  r.setProperty('--falls-l', X(648)); r.setProperty('--falls-r', X(838)); r.setProperty('--gaz-l', X(1120))
 }
 // p = page position as a float (0 = Tasks … 3 = Stats), or null to go back to the fixed layout
 export function setScenePan(p) { pan = p; placeScene() }
