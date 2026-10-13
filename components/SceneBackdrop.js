@@ -48,6 +48,7 @@ function placeScene() {
   // where the landmarks are on screen, so the layout can sit around them (egg house, falls, gazebo)
   const r = document.documentElement.style, X = ax => Math.round(left + ax * b.s) + 'px', Y = ay => Math.round(b.top + ay * b.s) + 'px'
   r.setProperty('--egg-l', X(308)); r.setProperty('--egg-r', X(442)); r.setProperty('--egg-b', Y(432))
+  r.setProperty('--scene-l', Math.round(left) + 'px'); r.setProperty('--scene-t', Math.round(b.top) + 'px'); r.setProperty('--scene-s', String(b.s))
   r.setProperty('--falls-l', X(648)); r.setProperty('--falls-r', X(838)); r.setProperty('--gaz-l', X(1120))
 }
 // p = page position as a float (0 = Tasks … 3 = Stats), or null to go back to the fixed layout
