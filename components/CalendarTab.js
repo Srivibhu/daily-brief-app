@@ -25,27 +25,28 @@ export default function CalendarTab({ tasks, tags }) {
   return (
     <div>
       <div className="cal-header">
-        <button className="cal-nav" onClick={() => move(-1)}>‹</button>
         <span className="cal-title">{MONTHS[month]} {year}</span>
-        <button className="cal-nav" onClick={() => move(1)}>›</button>
+        <button className="cal-nav" onClick={() => move(-1)} aria-label="Previous month">‹</button>
+        <button className="cal-nav" onClick={() => move(1)} aria-label="Next month">›</button>
       </div>
       <div className="cal-grid">
         {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => <div key={d} className="cal-dow">{d}</div>)}
         {Array.from({ length: first }, (_, i) => <div key={'e' + i} className="cal-cell empty" />)}
         {Array.from({ length: dim }, (_, i) => {
-          const day = i + 1, ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+          const day = i + 1, ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`, n = (byDay[day] || []).length
           return (
-            <div key={day} className={`cal-cell${ds === today ? ' today' : ''}${sel === day ? ' selected' : ''}`} onClick={() => setSel(sel === day ? null : day)}>
-              <div className="cal-day">{day}</div>
-              <div className="cal-dots">
-                {(byDay[day] || []).slice(0, 5).map(t => <div key={t.id} className="cal-dot" style={{ background: (urgencyInfo(t.due) || {}).color || 'var(--blue)' }} />)}
-              </div>
-            </div>
+            <button type="button" key={day} aria-pressed={sel === day} aria-label={`${MONTHS[month]} ${day}${n ? `, ${n} due` : ''}`}
+              className={`cal-cell${ds === today ? ' today' : ''}${sel === day ? ' selected' : ''}`} onClick={() => setSel(sel === day ? null : day)}>
+              <span className="cal-day">{day}</span>
+              <span className="cal-dots">
+                {(byDay[day] || []).slice(0, 5).map(t => <span key={t.id} className="cal-dot" style={{ background: (urgencyInfo(t.due) || {}).color || 'var(--blue)' }} />)}
+              </span>
+            </button>
           )
         })}
       </div>
       {sel && (
-        <div className="cal-selected-tasks">
+        <section className="panel cal-selected-tasks">
           <div className="cal-selected-date">{new Date(year, month, sel).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
           {!selTasks.length && <div className="empty" style={{ padding: '7px 0', fontSize: 12 }}>No tasks due</div>}
           {selTasks.map(t => {
@@ -59,7 +60,7 @@ export default function CalendarTab({ tasks, tags }) {
               </div>
             )
           })}
-        </div>
+        </section>
       )}
     </div>
   )

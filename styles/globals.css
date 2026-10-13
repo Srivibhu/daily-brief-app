@@ -79,7 +79,9 @@ body{font-family:var(--serif);background:var(--bg);color:var(--text);min-height:
 .scene-img.night{opacity:0;transition:opacity .7s ease}
 .scene-img.night.on{opacity:1}
 .scene-fx{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
-:root{--pixel:'Pixelify Sans',ui-monospace,monospace;
+/* Pixelify's 3 and 5 read like S and 8, so numbers come from a clearer pixel face (digits only, 3 KB) */
+@font-face{font-family:'Pixel Digits';src:url(/fonts/pixel-digits.woff2) format('woff2');unicode-range:U+0030-003A,U+0025;size-adjust:74%;font-display:swap}
+:root{--pixel:'Pixel Digits','Pixelify Sans',ui-monospace,monospace;
   --oc:rgba(250,246,232,.92);
   --outline:-1px 0 0 var(--oc),1px 0 0 var(--oc),0 -1px 0 var(--oc),0 1px 0 var(--oc),1px 1px 0 var(--oc)}
 :root[data-theme="dark"]{--oc:rgba(8,8,12,.9)}
@@ -573,13 +575,6 @@ kbd{font-family:var(--pixel);font-size:.9em;padding:0 5px;border:1px solid curre
   .activity-grid.wide{grid-template-columns:repeat(7,1fr)}
 }
 
-/* Focus, Calendar and Stats: one parchment board each (dense small text can't float on the art) */
-.parchment{background:var(--parch);border:3px solid var(--ink);border-radius:10px;box-shadow:0 5px 0 var(--ink);padding:24px 26px;text-shadow:none;animation:rise .4s cubic-bezier(.2,.7,.2,1) both}
-.parchment .focus-layout{gap:40px}
-.parchment .cal-grid,.parchment .cal-dow,.parchment .cal-cell{border-color:color-mix(in srgb,var(--ink) 25%,transparent)}
-.parchment .figure{border-top-color:color-mix(in srgb,var(--ink) 30%,transparent)}
-@media(max-width:560px){.parchment{padding:16px 14px}}
-
 /* small controls that sit on the art get the parchment chip treatment */
 .stack-toggle,.done-toggle{background:var(--parch);border:2px solid var(--ink);border-radius:6px;box-shadow:0 3px 0 var(--ink);padding:4px 10px 4px 6px;color:var(--text);text-shadow:none}
 .stack-toggle .stack-arrow{box-shadow:none;border-width:0;width:18px;height:18px;background:transparent}
@@ -595,3 +590,82 @@ kbd{font-family:var(--pixel);font-size:.9em;padding:0 5px;border:1px solid curre
 .done-name{color:var(--text)}
 :root[data-theme="dark"]{--oc:rgba(4,5,10,1)}
 .stack-count,.stack-avg{text-shadow:var(--outline2)}
+
+/* ══ Focus, Calendar and Stats: small separate panels, the scene shows in the gaps ══ */
+.tabview{animation:rise .4s cubic-bezier(.2,.7,.2,1) both}
+.panel{background:var(--parch);border:2px solid var(--ink);border-radius:8px;box-shadow:0 4px 0 var(--ink);padding:14px 16px 16px;text-shadow:none}
+.panel+.panel{margin-top:16px}
+.panel-label{font-family:var(--pixel);font-size:15px;font-weight:700;color:var(--text);margin-bottom:10px}
+.art-label{font-family:var(--pixel);font-size:16px;font-weight:700;color:var(--text);text-shadow:var(--outline2);margin:26px 0 10px}
+
+/* Focus: the timer stands on the art; the numbers live in panels beside it */
+.tab-focus .focus-layout{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:40px}
+.tab-focus .timer-panel{padding-top:6px}
+.tab-focus .timer-modes{gap:8px}
+.tab-focus .tmode{background:var(--parch);border:2px solid var(--ink);border-radius:6px;box-shadow:0 3px 0 var(--ink);padding:5px 12px;font-size:14px;text-shadow:none}
+.tab-focus .tmode.active{background:var(--leaf);color:#fff;border-color:var(--ink);box-shadow:inset 0 -3px 0 var(--leaf-d)}
+.tab-focus .timer-display{font-size:52px;letter-spacing:0;text-shadow:var(--outline2)}
+.tab-focus .timer-mode-label{font-family:var(--pixel);font-size:14px;font-weight:600;color:var(--text);letter-spacing:0}
+.tab-focus .session-dot{border:2px solid var(--ink);background:var(--parch);width:10px;height:10px;border-radius:2px}
+.tab-focus .session-dot.done{background:var(--leaf)}
+.tab-focus .tbtn:not(.primary){background:var(--parch);border:2px solid var(--ink);border-radius:7px;box-shadow:0 3px 0 var(--ink);text-shadow:none;width:42px;height:42px}
+.tab-focus .tbtn.primary{font-family:var(--pixel);font-size:16px;border:2px solid var(--ink);box-shadow:inset 0 -3px 0 rgba(0,0,0,.2);background:var(--leaf);color:#fff}
+.tab-focus .tbtn.primary.running{background:var(--wood)}
+.tab-focus .task-link-row{max-width:280px;padding:2px 10px}
+.tab-focus .task-link-row select{border:0;text-align:left;color:var(--text);font-family:var(--pixel);font-size:14px;padding:5px 0}
+.today-focus .focus-steps .big-mins{font-size:44px;letter-spacing:0}
+.today-focus .focus-steps .unit{font-family:var(--pixel);font-size:15px;margin-bottom:4px}
+.focus-subtext{font-size:13px}
+.focus-bar-track{height:12px;border:2px solid var(--ink);border-radius:3px;background:var(--parch-2);padding:1px;margin:10px 0 8px}
+.focus-bar-fill{border-radius:1px;background:repeating-linear-gradient(90deg,var(--leaf) 0 7px,transparent 7px 9px)}
+.panel .slog-item{border-bottom-color:color-mix(in srgb,var(--ink) 20%,transparent)}
+.panel .slog-text{color:var(--text)}
+.panel .week-chart-wrap{height:130px}
+
+/* Calendar: every day is its own tile, like an inventory grid */
+.tab-calendar .cal-header{gap:8px;margin-bottom:12px}
+.tab-calendar .cal-title{font-size:28px;text-shadow:var(--outline2)}
+.tab-calendar .cal-nav{background:var(--parch);border:2px solid var(--ink);border-radius:7px;box-shadow:0 3px 0 var(--ink);color:var(--text);width:40px;height:38px;font-size:20px;line-height:1;text-shadow:none}
+.tab-calendar .cal-nav:hover{background:var(--parch-2)}
+.tab-calendar .cal-grid{gap:6px;border:0}
+.tab-calendar .cal-dow{border:0;padding:0 0 2px 4px;font-family:var(--pixel);font-size:14px;font-weight:700;text-shadow:var(--outline2)}
+.tab-calendar .cal-cell{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:68px;padding:5px;border:2px solid var(--ink);border-radius:6px;background:var(--parch);box-shadow:0 3px 0 var(--ink);font:inherit;color:inherit;text-shadow:none}
+.tab-calendar .cal-cell:hover{background:var(--parch-2)}
+.tab-calendar .cal-cell.empty{background:none;border:0;box-shadow:none}
+.tab-calendar .cal-cell.selected{background:var(--parch-2);box-shadow:inset 0 3px 0 color-mix(in srgb,var(--ink) 30%,transparent);transform:translateY(2px)}
+.tab-calendar .cal-cell.today{border-color:var(--leaf-d);box-shadow:0 3px 0 var(--leaf-d)}
+.tab-calendar .cal-day{font-family:var(--pixel);font-size:14px;font-weight:600;border-radius:4px;width:auto;min-width:26px;padding:0 4px}
+.tab-calendar .cal-cell.today .cal-day{background:var(--leaf);color:#fff}
+.tab-calendar .cal-dots{padding-left:2px}
+.cal-dot{display:block}
+.tab-calendar .cal-selected-tasks{margin-top:20px}
+.tab-calendar .cal-selected-date{font-family:var(--pixel);font-size:17px}
+.panel .cal-task-row{border-bottom-color:color-mix(in srgb,var(--ink) 20%,transparent)}
+
+/* Stats: each figure is a small tile; the activity squares sit right on the art */
+.stats-view .figures{gap:12px;margin-bottom:0}
+.stats-view .figure{background:var(--parch);border:2px solid var(--ink);border-radius:8px;box-shadow:0 4px 0 var(--ink);padding:12px 14px;text-shadow:none;gap:8px}
+.stats-view .figure dd{font-size:24px;letter-spacing:0}
+.stats-view .figure dt{font-size:12.5px}
+.stats-view .activity-grid.wide{gap:6px;margin-bottom:24px}
+.stats-view .act-cell{border:2px solid var(--ink)!important;border-radius:4px;box-shadow:0 2px 0 var(--ink)}
+.stats-view .act-0{background:var(--parch)}
+.panel .bar-row{color:var(--text);font-family:var(--pixel);font-size:13px}
+.panel .bar-track{height:10px;border:2px solid var(--ink);border-radius:3px;background:var(--parch-2);padding:1px}
+
+@media(max-width:860px){
+  .tab-focus .focus-layout{grid-template-columns:minmax(0,1fr);gap:28px}
+}
+@media(max-width:560px){
+  .panel{padding:12px 12px 14px}
+  .tab-calendar .cal-grid{gap:4px}
+  .tab-calendar .cal-cell{min-height:50px;padding:3px}
+  .tab-calendar .cal-day{font-size:12px;min-width:20px;padding:0 2px}
+  .tab-calendar .cal-dow{font-size:12px;padding-left:2px}
+  .stats-view .figures{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .stats-view .figure dd{font-size:21px}
+  .tab-focus .timer-display{font-size:46px}
+}
+.panel .bar-track{height:9px}
+.panel-label .legend{float:right;font-family:var(--sans);font-size:12px;font-weight:600;color:var(--text);display:inline-flex;align-items:center;gap:6px}
+.panel-label .legend i{display:inline-block;width:10px;height:10px;border:2px solid var(--ink);border-radius:2px;margin-left:6px}
