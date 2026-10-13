@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { statusOf, urgencyInfo, stripHtml, PRIORITY_LABELS } from '../lib/util'
+import { statusOf, urgencyInfo, stripHtml, PRIORITY_LABELS, safeHref } from '../lib/util'
 
 // One task tile: check · due, title, a line of context, progress bar along the bottom.
 // Everything else (notes, link, tags, history) lives in the detail sheet (TaskDetail).
@@ -30,7 +30,7 @@ export default function TaskCard({ task: t, idx = 0, onOpen, onProgress }) {
       {(t.priority || t.link) && (
         <div className="card-meta">
           {t.priority && <span className={`prio prio-${t.priority}`}>{PRIORITY_LABELS[t.priority]}</span>}
-          {t.link && <a href={t.link} target="_blank" rel="noopener noreferrer" onClick={stop}>Link ↗</a>}
+          {safeHref(t.link) && <a href={safeHref(t.link)} target="_blank" rel="noopener noreferrer" onClick={stop}>Link ↗</a>}
         </div>
       )}
 

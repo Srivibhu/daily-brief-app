@@ -1,5 +1,6 @@
 import { withAuth } from '../../../lib/auth'
 import { sql, dateOnly } from '../../../lib/db'
+import { cleanLink } from '../../../lib/security'
 
 export default withAuth(async function handler(req, res) {
   const { id } = req.query
@@ -19,6 +20,9 @@ export default withAuth(async function handler(req, res) {
     const allowed = ['name','notes','progress','tags','priority','link','due','due_time','history','completed_at']
     const update = {}
     for (const k of allowed) if (req.body[k] !== undefined) update[k] = req.body[k]
+    if (update.link !== undefined) update.link = cleanLink(update.link)
+    if (typeof update.name === 'string' && (!update.name.trim() || update.name.length > 500)) return res.status(400).json({ error: 'Name must be 1 to 500 characters' })
+    if (typeof update.notes === 'string' && update.notes.length > 100000) return res.status(400).json({ error: 'Notes are too long' })
     // Auto-set completed_at when progress hits 100
     if (update.progress === 100 && !existing.completed_at) {
       update.completed_at = new Date().toISOString().slice(0, 10)
@@ -40,7 +44,8 @@ export default withAuth(async function handler(req, res) {
         RETURNING *`
       return res.status(200).json(dateOnly(out[0]))
     } catch (error) {
-      return res.status(500).json({ error: error.message })
+      console.error(error)
+      return res.status(500).json({ error: 'Something went wrong' })
     }
   }
 

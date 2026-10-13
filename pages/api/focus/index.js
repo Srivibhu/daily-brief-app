@@ -26,7 +26,8 @@ export default withAuth(async function handler(req, res) {
         RETURNING *`
       return res.status(201).json(dateOnly(rows[0]))
     } catch (error) {
-      return res.status(500).json({ error: error.message })
+      console.error(error)
+      return res.status(500).json({ error: 'Something went wrong' })
     }
   }
 
