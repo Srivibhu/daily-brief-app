@@ -64,7 +64,7 @@ export default function FocusTab({ timer, tasks, sessions, focusTaskId, setFocus
           <div className="focus-steps"><div className="big-mins">{mins}</div><div className="unit">min</div></div>
           <div className="focus-subtext">{full} session{full !== 1 ? 's' : ''} completed today</div>
           <div className="focus-bar-track"><div className="focus-bar-fill" style={{ width: Math.min(100, Math.round(mins / GOAL * 100)) + '%' }} /></div>
-          <div style={{ fontFamily: 'var(--sans)', fontSize: 10, color: 'var(--sub)' }}>Goal: {GOAL} min / day</div>
+          <div className="focus-subtext">Goal: {GOAL} min / day</div>
         </div>
         <div className="field-label">This Week</div>
         <div className="week-chart-wrap"><WeekBars labels={labels} data={data} /></div>

@@ -24,7 +24,7 @@ export default function Sidebar({ tasks, activity, onOpen }) {
             <li key={t.id}>
               <button className="due-item" onClick={() => onOpen(t.id)}>
                 <span className="due-name">{t.name}</span>
-                <span className={`due-when ${t.u.cls}`}>{t.u.label}</span>
+                <span className={`due-when ${t.u.cls}`}><i aria-hidden="true" /><span>{t.u.label}</span></span>
               </button>
             </li>
           ))}
