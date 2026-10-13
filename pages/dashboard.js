@@ -11,8 +11,10 @@ import TagModal from '../components/TagModal'
 import AccountModal from '../components/AccountModal'
 import PetPanel, { PetPortrait } from '../components/PetCard'
 import { FocusHud } from '../components/Hud'
+import EverfallIntro, { DogSpot } from '../components/EverfallIntro'
 import { computePet, setPetState, petReact, MOODS } from '../lib/pet'
 import { useTheme, setTheme } from '../lib/theme'
+import { accountIsNew, introSeen, markIntroSeen, REPLAY_FROM, PANELS } from '../lib/intro'
 import { setScenePan } from '../components/SceneBackdrop'
 import { useTimer } from '../lib/useTimer'
 import { useReminders } from '../lib/useReminders'
@@ -57,6 +59,9 @@ export default function Dashboard() {
   const [showPet, setShowPet] = useState(false)     // false | true | 'hatched'
   const [petPreview, setPetPreview] = useState(null)
   const [petData, setPetData] = useState(null)    // /api/pet: name, skin, owned, balances, all-time totals
+  const [introStep, setIntroStep] = useState(null) // the Everfall tour: null = not running, else 0…7
+  const [dataReady, setDataReady] = useState(false) // tasks, sessions and pet totals have all landed
+  const introDone = useRef(false)
   const pending = useRef({})
   const pager = useRef(null)
   const deleted = useRef(new Set())
@@ -74,12 +79,25 @@ export default function Dashboard() {
   }, []) // eslint-disable-line
 
   async function loadData() {
-    refreshPet()
-    const [t, tg, f, a] = await Promise.all([api('/api/tasks'), api('/api/tags'), api('/api/focus'), api('/api/activity')])
+    // One batch. The intro must not decide "new account" off an empty task list that simply
+    // has not come back yet, or a returning user gets the tour on every cold load.
+    const [t, tg, f, a, pet] = await Promise.all([
+      api('/api/tasks'), api('/api/tags'), api('/api/focus'), api('/api/activity'),
+      api('/api/pet').catch(() => null),
+    ])
     if (Array.isArray(t)) setTasks(t)
     if (Array.isArray(tg)) setTags(tg)
     if (Array.isArray(f)) setSessions(f)
     if (Array.isArray(a)) setActivity(Object.fromEntries(a.map(r => [r.date, r.count])))
+    if (pet && !pet.error) {
+      setPetData(pet)
+      try {
+        const old = localStorage.getItem('db-pet-name')
+        if (old && !pet.name) namePet(old)
+        localStorage.removeItem('db-pet-name')
+      } catch {}
+    }
+    setDataReady(true)
   }
 
   // Date rollover
@@ -135,11 +153,7 @@ export default function Dashboard() {
   const skin = petData?.skin || 'bluebird'
   async function refreshPet() {
     const d = await api('/api/pet').catch(() => null)
-    if (d && !d.error) {
-      setPetData(d)
-      // carry over a name given before the pets table existed
-      try { const old = localStorage.getItem('db-pet-name'); if (old && !d.name) { namePet(old) } localStorage.removeItem('db-pet-name') } catch {}
-    }
+    if (d && !d.error) setPetData(d)
   }
   const petTimer = useRef(null)
   const refreshPetSoon = () => { clearTimeout(petTimer.current); petTimer.current = setTimeout(refreshPet, 1200) }
@@ -148,6 +162,31 @@ export default function Dashboard() {
     if (authLoading || !tasks.length || pet.real < 2) return
     try { if (!localStorage.getItem('db-pet-hatched')) { localStorage.setItem('db-pet-hatched', '1'); setShowPet('hatched') } } catch {}
   }, [pet.real, authLoading, tasks.length])
+  // ── The Everfall intro ───────────────────────────────────────────────────────
+  // New accounts only: it needs the pet totals in hand to tell a first load from a returning one, so
+  // an existing user is never ambushed. Afterwards it is replayed by tapping the dog on the porch (or
+  // from the account sheet, where it is reachable on a phone and by keyboard).
+  useEffect(() => {
+    if (authLoading || !dataReady || introDone.current || introStep !== null || introSeen()) return
+    if (!accountIsNew({ tasks, sessions, petData })) { introDone.current = true; return }
+    introDone.current = true
+    setIntroStep(0)
+  }, [authLoading, dataReady, petData, tasks, sessions, introStep])
+  // Panel 05's link row should already hold the quest from panel 04. Fill it if nothing is linked.
+  useEffect(() => {
+    if (introStep == null || PANELS[introStep]?.id !== 'clock') return
+    setFocusTaskId(cur => {
+      if (cur && tasks.some(t => t.id === cur && t.progress < 100)) return cur
+      const open = tasks.find(t => t.progress < 100)
+      return open ? open.id : cur
+    })
+  }, [introStep, tasks])
+  function endIntro() {
+    markIntroSeen(); introDone.current = true
+    setIntroStep(null); setShowPet(false); setPetPreview(null)
+  }
+  function replayIntro() { setShowPet(false); setPetPreview(null); setIntroStep(REPLAY_FROM) }
+
   async function namePet(n) {
     setPetData(d => d && { ...d, name: n })
     const d = await api('/api/pet', { method: 'PATCH', body: { name: n } })
@@ -305,7 +344,10 @@ export default function Dashboard() {
 
   // wide: the first category gets the strip between the egg house and the falls, the rest go right of the falls
   const nLeft = groups.length > 1 ? Math.max(1, Math.round(groups.length / 3)) : 0
-  const stacks = gs => <CategoryStacks groups={gs} expanded={expanded} onToggleExpand={toggleExpand} onOpen={setDetailId} onProgress={setProgress} />
+  const sparkId = (introStep != null && PANELS[introStep]?.id === 'quest' && tasks.length)
+    ? tasks.filter(t => t.progress < 100).sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))[0]?.id
+    : null
+  const stacks = gs => <CategoryStacks groups={gs} expanded={expanded} onToggleExpand={toggleExpand} onOpen={setDetailId} onProgress={setProgress} sparkId={sparkId} />
   const doneBlock = done.length > 0 && (
     <section className="done-section">
       <button className="done-toggle" aria-expanded={doneOpen} onClick={() => setDoneOpen(!doneOpen)}>
@@ -374,7 +416,7 @@ export default function Dashboard() {
   )
 
   return (
-    <div className={`shell${phone ? ' paged' : wide ? ' zoned' : ''}`}>
+    <div className={`shell${phone ? ' paged' : wide ? ' zoned' : ''}${introStep !== null ? ' intro-on' : ''}`}>
       {phone ? (
         // phones: the four pages sit side by side; swipe (or tap the hotbar) and the scene walks with you
         <div className="pager" ref={pager} onScroll={onPagerScroll}>
@@ -394,6 +436,9 @@ export default function Dashboard() {
           <main className="board">{view(tab)}</main>
         </>
       )}
+
+      {/* tap the dog to hear the tour again; hidden while he is off the pan, and during the tour itself */}
+      {introStep === null && <DogSpot onClick={replayIntro} />}
 
       {/* the hotbar: every control, always in the same place */}
       <nav className="hotbar" aria-label="Main">
@@ -428,9 +473,11 @@ export default function Dashboard() {
       {detailTask && <TaskDetail key={detailTask.id} task={detailTask} tags={tags} onClose={() => setDetailId(null)}
         onProgress={setProgress} onUpdate={updateTask} onDelete={deleteTask} />}
       {showAccount && <AccountModal user={user} onSaved={u => setUser(x => ({ ...x, ...u }))} onClose={() => setShowAccount(false)}
-        onExport={exportData} onSignOut={logout} />}
-      {showPet && <PetPanel pet={pet} petData={petData} name={petName} skin={skin} onName={namePet} onBuy={buySkin} onWear={wearSkin}
-        hatched={showPet === 'hatched'} initialTab={showPet === 'shop' ? 'shop' : 'bird'} preview={petPreview} onPreview={setPetPreview} onClose={() => setShowPet(false)} />}
+        onExport={exportData} onSignOut={logout}
+        onReplayIntro={() => { setShowAccount(false); replayIntro() }} />}
+      {showPet && <PetPanel key={String(showPet)} pet={pet} petData={petData} name={petName} skin={skin} onName={namePet} onBuy={buySkin} onWear={wearSkin}
+        hatched={showPet === 'hatched'} initialTab={showPet === 'shop' ? 'shop' : showPet === 'stages' ? 'stages' : 'bird'}
+        preview={petPreview} onPreview={setPetPreview} onClose={() => setShowPet(false)} />}
       {showTags && <TagModal tags={tags} setTags={updater => {
         // Intercept tag updates: when a tag is renamed, also update task tag name strings
         setTags(prev => {
@@ -446,6 +493,13 @@ export default function Dashboard() {
           return next
         })
       }} onClose={() => setShowTags(false)} />}
+
+      {introStep !== null && (
+        <EverfallIntro step={introStep} onStep={setIntroStep} onEnd={endIntro}
+          tasks={tasks} timerRunning={timer.running} phone={phone} dark={theme === 'dark'}
+          onTab={k => (phone ? goTab(k) : setTab(k))} onSheet={setShowPet} onPreview={setPetPreview}
+          onGateMet={g => { if (g === 'task') setAdding(false) }} />
+      )}
     </div>
   )
 }

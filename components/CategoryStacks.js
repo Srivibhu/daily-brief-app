@@ -2,7 +2,7 @@ import TaskCard from './TaskCard'
 
 // Tasks grouped by category, each shown as a pile of cards (see sketch):
 // the next-up task sits on top, the rest peek out underneath, and the arrow below fans them out.
-export default function CategoryStacks({ groups, expanded, onToggleExpand, onOpen, onProgress }) {
+export default function CategoryStacks({ groups, expanded, onToggleExpand, onOpen, onProgress, sparkId = null }) {
   return (
     <div className="stacks">
       {groups.map(g => {
@@ -10,7 +10,7 @@ export default function CategoryStacks({ groups, expanded, onToggleExpand, onOpe
         const [top, ...rest] = g.tasks
         const avg = Math.round(g.tasks.reduce((a, t) => a + t.progress, 0) / g.tasks.length)
         const depth = open ? 0 : Math.min(rest.length, 2)
-        const card = (t, i) => <TaskCard key={t.id} task={t} idx={i} onOpen={() => onOpen(t.id)} onProgress={onProgress} />
+        const card = (t, i) => <TaskCard key={t.id} task={t} idx={i} spark={t.id === sparkId} onOpen={() => onOpen(t.id)} onProgress={onProgress} />
         return (
           <section key={g.name} className={`stack${open ? ' open' : ''}`} style={{ '--cat': g.color }} aria-label={g.name}>
             <header className="stack-head">

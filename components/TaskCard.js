@@ -3,7 +3,7 @@ import { statusOf, urgencyInfo, stripHtml, PRIORITY_LABELS, safeHref } from '../
 
 // One task tile: check · due, title, a line of context, progress bar along the bottom.
 // Everything else (notes, link, tags, history) lives in the detail sheet (TaskDetail).
-export default function TaskCard({ task: t, idx = 0, onOpen, onProgress }) {
+export default function TaskCard({ task: t, idx = 0, onOpen, onProgress, spark = false }) {
   const s = statusOf(t), u = urgencyInfo(t.due)
   const notes = stripHtml(t.notes)
   const [editPct, setEditPct] = useState(null)
@@ -12,7 +12,7 @@ export default function TaskCard({ task: t, idx = 0, onOpen, onProgress }) {
   const dueLabel = s === 'done' ? 'Done' : u ? u.label : ''
 
   return (
-    <article className={`task-card is-${s}`} style={{ '--i': Math.min(idx, 10) }} tabIndex={0}
+    <article className={`task-card is-${s}${spark ? ' intro-spark' : ''}`} style={{ '--i': Math.min(idx, 10) }} tabIndex={0}
       onClick={onOpen} onKeyDown={e => { if (e.key === 'Enter' && e.target === e.currentTarget) onOpen() }}
       aria-label={`${t.name}, ${t.progress}% done${dueLabel ? ', ' + dueLabel : ''}`}>
       <div className="card-top">
