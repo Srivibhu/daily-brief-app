@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { MiniLine } from './charts'
 import { statusOf, sanitizeHtml, dateStr, PRIORITY_LABELS, safeHref } from '../lib/util'
 
@@ -39,6 +39,7 @@ function NoteEditor({ html, onSave }) {
 }
 
 export default function TaskDetail({ task: t, tags, onClose, onProgress, onUpdate, onDelete }) {
+  const [confirming, setConfirming] = useState(false)
   const s = statusOf(t)
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose() }
@@ -119,7 +120,14 @@ export default function TaskDetail({ task: t, tags, onClose, onProgress, onUpdat
 
         <div className="detail-footer">
           <span className="detail-meta-sm">Added {t.created_at || 'today'}</span>
-          <button className="link-btn danger" onClick={() => { if (confirm('Delete this task?')) { onDelete(t.id); onClose() } }}>Delete task</button>
+          {/* two-step delete in the page itself: browser confirm() dialogs are blocked in some in-app browsers */}
+          {confirming ? (
+            <span className="del-confirm" role="group" aria-label="Confirm delete">
+              <span>Delete this task?</span>
+              <button type="button" className="btn danger-btn" onClick={() => { onDelete(t.id); onClose() }}>Delete</button>
+              <button type="button" className="link-btn" onClick={() => setConfirming(false)}>Cancel</button>
+            </span>
+          ) : <button type="button" className="link-btn danger" onClick={() => setConfirming(true)}>Delete task</button>}
         </div>
       </div>
     </div>
