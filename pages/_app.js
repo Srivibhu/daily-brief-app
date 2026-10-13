@@ -1,6 +1,9 @@
 import Head from 'next/head'
+import '@fontsource/pixelify-sans/400.css'
+import '@fontsource/pixelify-sans/600.css'
+import '@fontsource/pixelify-sans/700.css'
 import '../styles/globals.css'
-import PixelBackdrop from '../components/PixelBackdrop'
+import SceneBackdrop from '../components/SceneBackdrop'
 import { useTheme } from '../lib/theme'
 
 export default function App({ Component, pageProps }) {
@@ -14,9 +17,7 @@ export default function App({ Component, pageProps }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <title>Daily Brief</title>
       </Head>
-      <PixelBackdrop />
-      {/* soft wash over the scene behind the content column, so text sits on calm ground without boxes */}
-      <div className="veil" aria-hidden="true" />
+      <SceneBackdrop />
       <Component {...pageProps} />
     </>
   )

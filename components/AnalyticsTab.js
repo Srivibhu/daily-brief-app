@@ -1,4 +1,4 @@
-import { fmtMins, isoWeekYear } from '../lib/util'
+import { fmtMins, isoWeekYear, dateStr } from '../lib/util'
 
 function weeklyStats(tasks) {
   const weeks = {}
@@ -12,7 +12,13 @@ function weeklyStats(tasks) {
   return Object.values(weeks).sort((a, b) => b.key.localeCompare(a.key)).slice(0, 8)
 }
 
-export default function AnalyticsTab({ tasks, sessions }) {
+export default function AnalyticsTab({ tasks, sessions, activity = {} }) {
+  const now = new Date()
+  const cells = Array.from({ length: 28 }, (_, i) => {
+    const d = new Date(now); d.setDate(d.getDate() - (27 - i))
+    const k = dateStr(d), c = activity[k] || 0
+    return { k, c, l: c === 0 ? 0 : c <= 2 ? 1 : c <= 5 ? 2 : 3 }
+  })
   const weeks = weeklyStats(tasks)
   const cur = isoWeekYear(new Date()), lastD = new Date(); lastD.setDate(lastD.getDate() - 7)
   const last = isoWeekYear(lastD)
@@ -35,7 +41,9 @@ export default function AnalyticsTab({ tasks, sessions }) {
       <dl className="figures">
         {stats.map(([l, v, c]) => <div className="figure" key={l}><dd style={{ color: c || 'var(--text)' }}>{v}</dd><dt>{l}</dt></div>)}
       </dl>
-      <div className="field-label" style={{ marginTop: 4 }}>Weekly tasks — scheduled vs completed</div>
+      <div className="field-label" style={{ marginTop: 4 }}>Last 4 weeks · {cells.filter(c => c.c > 0).length} active days</div>
+      <div className="activity-grid wide">{cells.map(c => <div key={c.k} className={`act-cell act-${c.l}`} title={`${c.k}: ${c.c}`} />)}</div>
+      <div className="field-label">Weekly tasks — scheduled vs completed</div>
       {!weeks.length && <div className="empty">No task history yet</div>}
       {[...weeks].reverse().map(w => (
         <div className="bar-row" key={w.key}>

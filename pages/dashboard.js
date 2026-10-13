@@ -5,10 +5,11 @@ import TaskDetail from '../components/TaskDetail'
 import FocusTab from '../components/FocusTab'
 import CalendarTab from '../components/CalendarTab'
 import AnalyticsTab from '../components/AnalyticsTab'
-import Sidebar from '../components/Sidebar'
+import AddTaskSheet from '../components/AddTaskSheet'
+import PixelIcon from '../components/PixelIcon'
 import TagModal from '../components/TagModal'
 import AccountModal from '../components/AccountModal'
-import ThemeToggle from '../components/ThemeToggle'
+import { useTheme, setTheme } from '../lib/theme'
 import { PixelTomato } from '../components/PixelTimer'
 import { useTimer } from '../lib/useTimer'
 import { useReminders } from '../lib/useReminders'
@@ -21,6 +22,7 @@ const mmss = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 6
 
 export default function Dashboard() {
   const router = useRouter()
+  const theme = useTheme()
   const [user, setUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [tasks, setTasks] = useState([])
@@ -37,7 +39,7 @@ export default function Dashboard() {
   const [showAccount, setShowAccount] = useState(false)
   const [focusTaskId, setFocusTaskId] = useState(null)
   const [today, setToday] = useState(todayStr())
-  const [nq, setNq] = useState({ name: '', due: todayStr(), time: '', tag: '' })
+  const [adding, setAdding] = useState(false)
   const pending = useRef({})
 
   // ── Boot ─────────────────────────────────────────────────────────────────────
@@ -58,7 +60,7 @@ export default function Dashboard() {
 
   // Date rollover
   useEffect(() => {
-    const check = () => { const d = todayStr(); if (d !== today) { setToday(d); setNq(q => ({ ...q, due: d })); loadData() } }
+    const check = () => { const d = todayStr(); if (d !== today) { setToday(d); loadData() } }
     const id = setInterval(check, 60000)
     document.addEventListener('visibilitychange', check)
     window.addEventListener('focus', check)
@@ -66,6 +68,17 @@ export default function Dashboard() {
   }, [today])
 
   useReminders(tasks)
+
+  // N opens the new-task sheet (when not typing somewhere)
+  useEffect(() => {
+    const onKey = e => {
+      if (e.key.toLowerCase() !== 'n' || e.metaKey || e.ctrlKey || e.altKey) return
+      if (/input|textarea|select/i.test(e.target.tagName) || e.target.isContentEditable) return
+      e.preventDefault(); setAdding(true)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   // ── Activity ─────────────────────────────────────────────────────────────────
   function recordActivity() {
@@ -96,11 +109,10 @@ export default function Dashboard() {
     recordActivity()
   }
 
-  async function addTask() {
-    const name = nq.name.trim(); if (!name) return
-    const data = await api('/api/tasks', { method: 'POST', body: { name, due: nq.due || null, due_time: nq.time || null, tags: nq.tag ? [nq.tag] : [] } })
+  async function addTask(q) {
+    const name = q.name.trim(); if (!name) return
+    const data = await api('/api/tasks', { method: 'POST', body: { name, due: q.due || null, due_time: q.time || null, tags: q.tag ? [q.tag] : [] } })
     if (data?.id) { setTasks(ts => [data, ...ts]); recordActivity() }
-    setNq({ name: '', due: todayStr(), time: '', tag: '' })
   }
 
   async function deleteTask(id) {
@@ -175,26 +187,16 @@ export default function Dashboard() {
   const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
 
   const FILTERS = [['all', 'All', live.length], ['today', 'Due today', nDueToday], ['overdue', 'Overdue', nOverdue], ['inprog', 'In progress', nProg], ['todo', 'Not started', live.length - nProg]]
-  const TABS = [
-    ['tasks', 'Tasks'],
-    ['focus', <span className="tab-label"><PixelTomato animate={timer.running} />Focus{timer.running && tab !== 'focus' && <span className="tab-timer">{mmss(timer.secs)}</span>}</span>],
-    ['calendar', 'Calendar'],
-    ['analytics', 'Analytics'],
+  const attention = nOverdue + nDueToday
+  const HOTBAR = [
+    ['tasks', 'Tasks', <PixelIcon name="quest" />, attention],
+    ['focus', 'Focus', <PixelTomato animate={timer.running} />],
+    ['calendar', 'Calendar', <PixelIcon name="calendar" />],
+    ['analytics', 'Stats', <PixelIcon name="stats" />],
   ]
 
   return (
     <div className="shell">
-      <header className="masthead">
-        <span className="wordmark">Daily Brief</span>
-        <nav className="quiet-actions" aria-label="Account">
-          <ThemeToggle />
-          <button className="link-btn" onClick={() => setShowTags(true)}>Tags</button>
-          <button className="link-btn" onClick={() => setShowAccount(true)}>Account</button>
-          <button className="link-btn" onClick={exportData}>Export</button>
-          <button className="link-btn" onClick={logout}>Sign out</button>
-        </nav>
-      </header>
-
       <section className="hello">
         <div className="dateline">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
         <h1>{h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}{name && `, ${name}`}</h1>
@@ -205,82 +207,93 @@ export default function Dashboard() {
         </p>
       </section>
 
-      <nav className="tabs" role="tablist">
-        {TABS.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={`tab${tab === k ? ' active' : ''}`} onClick={() => setTab(k)}>{l}</button>)}
-      </nav>
-
-      <div className={`page${tab === 'tasks' ? '' : ' wide'}`}>
-        <main>
-          {tab === 'tasks' && (
-            <>
-              <div className={`quick-add${nq.name ? ' has-text' : ''}`}>
-                <input className="quick-add-input" placeholder="Add a task…" value={nq.name} aria-label="New task"
-                  onChange={e => setNq({ ...nq, name: e.target.value })} onKeyDown={e => e.key === 'Enter' && addTask()} />
-                <div className="quick-add-fields">
-                  <select className="qa-field" value={nq.tag} aria-label="Category" onChange={e => setNq({ ...nq, tag: e.target.value })}>
-                    <option value="">No category</option>
-                    {tags.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+      <main className="board">
+        {tab === 'tasks' && (
+          <>
+            <div className="board-head">
+              <h2 className="board-title">Tasks</h2>
+              <div className="chips">
+                <label className="chip">
+                  <span className="sr-only">Show</span>
+                  <select value={filter} onChange={e => setFilter(e.target.value)} aria-label="Filter tasks">
+                    {FILTERS.map(([v, l, n]) => <option key={v} value={v}>{l} ({n})</option>)}
                   </select>
-                  <input type="date" className="qa-field" aria-label="Due date" value={nq.due} onChange={e => setNq({ ...nq, due: e.target.value })} />
-                  <input type="time" className="qa-field" aria-label="Due time" value={nq.time} onChange={e => setNq({ ...nq, time: e.target.value })} />
-                  <button className="qa-submit" onClick={addTask} disabled={!nq.name.trim()}>Add</button>
-                </div>
-              </div>
-
-              <div className="task-toolbar">
-                <div className="filters">
-                  {FILTERS.map(([v, l, n]) => (
-                    <button key={v} className={`filter${filter === v ? ' active' : ''}${v === 'overdue' && n ? ' warn' : ''}`} onClick={() => setFilter(v)}>
-                      {l}<span className="filter-n">{n}</span>
-                    </button>
-                  ))}
-                </div>
-                <label className="sort">
-                  <span>Sort</span>
-                  <select value={sort} onChange={e => setSort(e.target.value)}>
+                </label>
+                <label className="chip">
+                  <span className="chip-k">Sort</span>
+                  <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Sort tasks">
                     <option value="due">Due date</option><option value="priority">Priority</option>
                     <option value="progress">Progress</option><option value="created">Newest</option>
                   </select>
                 </label>
               </div>
+            </div>
 
-              {!groups.length && <p className="empty">{filter === 'all' ? 'No open tasks. Add one above.' : 'Nothing matches this filter.'}</p>}
-              <CategoryStacks groups={groups} expanded={expanded} onToggleExpand={toggleExpand} onOpen={setDetailId} onProgress={setProgress} />
+            {!groups.length && (
+              <p className="empty">{filter === 'all' ? <>No open tasks. Press <kbd>N</kbd> or the <b>+</b> below to add one.</> : 'Nothing matches this filter.'}</p>
+            )}
+            <CategoryStacks groups={groups} expanded={expanded} onToggleExpand={toggleExpand} onOpen={setDetailId} onProgress={setProgress} />
 
-              {done.length > 0 && (
-                <section className="done-section">
-                  <button className="done-toggle" aria-expanded={doneOpen} onClick={() => setDoneOpen(!doneOpen)}>
-                    {doneOpen ? '▾' : '▸'} Done <span className="filter-n">{done.length}</span>
-                  </button>
-                  {doneOpen && (
-                    <ul className="done-list">
-                      {done.map(t => (
-                        <li key={t.id}>
-                          <button className="card-check done" aria-label="Mark incomplete" onClick={() => setProgress(t.id, 0)} />
-                          <button className="done-name" onClick={() => setDetailId(t.id)}>{t.name}</button>
-                          <span className="done-when">{t.completed_at}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-              )}
-            </>
-          )}
+            {done.length > 0 && (
+              <section className="done-section">
+                <button className="done-toggle" aria-expanded={doneOpen} onClick={() => setDoneOpen(!doneOpen)}>
+                  {doneOpen ? '▾' : '▸'} Done <span className="filter-n">{done.length}</span>
+                </button>
+                {doneOpen && (
+                  <ul className="done-list">
+                    {done.map(t => (
+                      <li key={t.id}>
+                        <button className="card-check done" aria-label="Mark incomplete" onClick={() => setProgress(t.id, 0)} />
+                        <button className="done-name" onClick={() => setDetailId(t.id)}>{t.name}</button>
+                        <span className="done-when">{t.completed_at}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
+          </>
+        )}
 
-          {tab === 'focus' && (
-            <FocusTab timer={timer} tasks={tasks} sessions={sessions} focusTaskId={focusTaskId} setFocusTaskId={setFocusTaskId}
-              onDeleteSession={deleteSession} onManualLog={manualLog} />
-          )}
-          {tab === 'calendar' && <CalendarTab tasks={tasks} tags={tags} />}
-          {tab === 'analytics' && <AnalyticsTab tasks={tasks} sessions={sessions} />}
-        </main>
-        {tab === 'tasks' && <Sidebar tasks={tasks} activity={activity} onOpen={setDetailId} />}
-      </div>
+        {tab !== 'tasks' && (
+          <section className="parchment" aria-label={tab === 'analytics' ? 'Stats' : tab[0].toUpperCase() + tab.slice(1)}>
+            {tab === 'focus' && (
+              <FocusTab timer={timer} tasks={tasks} sessions={sessions} focusTaskId={focusTaskId} setFocusTaskId={setFocusTaskId}
+                onDeleteSession={deleteSession} onManualLog={manualLog} />
+            )}
+            {tab === 'calendar' && <CalendarTab tasks={tasks} tags={tags} />}
+            {tab === 'analytics' && <AnalyticsTab tasks={tasks} sessions={sessions} activity={activity} />}
+          </section>
+        )}
+      </main>
 
+      {/* the hotbar: every control, always in the same place */}
+      <nav className="hotbar" aria-label="Main">
+        <button className="hb-add" onClick={() => setAdding(true)} aria-label="Add task (N)" title="Add task (N)">
+          <PixelIcon name="plus" size={20} />
+        </button>
+        <div className="hb-group" role="tablist">
+          {HOTBAR.map(([k, l, icon, badge]) => (
+            <button key={k} role="tab" aria-selected={tab === k} className={`hb-btn${tab === k ? ' on' : ''}`} onClick={() => setTab(k)}>
+              <span className="hb-icon">{icon}{badge > 0 && <span className="hb-badge" aria-label={`${badge} need attention`}>{badge}</span>}</span>
+              <span className="hb-label">{k === 'focus' && timer.running && tab !== 'focus' ? mmss(timer.secs) : l}</span>
+            </button>
+          ))}
+        </div>
+        <div className="hb-group hb-small">
+          <button className="hb-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={`Switch to ${theme === 'dark' ? 'day' : 'night'}`} title={theme === 'dark' ? 'Day' : 'Night'}>
+            <span className="hb-icon"><PixelIcon name={theme === 'dark' ? 'sun' : 'moon'} /></span><span className="hb-label">{theme === 'dark' ? 'Day' : 'Night'}</span>
+          </button>
+          <button className="hb-btn" onClick={() => setShowTags(true)} title="Tags"><span className="hb-icon"><PixelIcon name="tag" /></span><span className="hb-label">Tags</span></button>
+          <button className="hb-btn" onClick={() => setShowAccount(true)} title="Account"><span className="hb-icon"><PixelIcon name="person" /></span><span className="hb-label">Me</span></button>
+        </div>
+      </nav>
+
+      {adding && <AddTaskSheet tags={tags} onAdd={addTask} onClose={() => setAdding(false)} />}
       {detailTask && <TaskDetail key={detailTask.id} task={detailTask} tags={tags} onClose={() => setDetailId(null)}
         onProgress={setProgress} onUpdate={updateTask} onDelete={deleteTask} />}
-      {showAccount && <AccountModal user={user} onSaved={u => setUser(x => ({ ...x, ...u }))} onClose={() => setShowAccount(false)} />}
+      {showAccount && <AccountModal user={user} onSaved={u => setUser(x => ({ ...x, ...u }))} onClose={() => setShowAccount(false)}
+        onExport={exportData} onSignOut={logout} />}
       {showTags && <TagModal tags={tags} setTags={setTags} onClose={() => setShowTags(false)} />}
     </div>
   )
