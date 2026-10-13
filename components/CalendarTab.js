@@ -20,7 +20,7 @@ export default function CalendarTab({ tasks, tags }) {
     if (t.due && +t.due.slice(0, 4) === year && +t.due.slice(5, 7) - 1 === month) (byDay[+t.due.slice(8, 10)] ||= []).push(t)
   })
   const selTasks = sel ? byDay[sel] || [] : []
-  const chip = n => { const g = tags.find(x => x.name === n); return g && <span key={n} className="tag" style={{ background: g.color + '18', color: g.color }}>{g.name}</span> }
+  const chip = n => { const g = tags.find(x => x.name === n); return g && <span key={n} className="tag" style={{ background: g.color + '33', color: 'var(--text)', boxShadow: `inset 0 0 0 1px ${g.color}` }}>{g.name}</span> }
 
   return (
     <div>

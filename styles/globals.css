@@ -691,3 +691,12 @@ kbd{font-family:var(--pixel);font-size:.9em;padding:0 5px;border:1px solid curre
   .stats-view .activity-grid.wide{grid-template-columns:repeat(14,minmax(0,1fr));gap:4px}
   .stats-view .act-cell{border-width:1.5px!important;box-shadow:0 1.5px 0 var(--ink)}
 }
+
+/* green buttons: a deeper leaf so white pixel lettering clears 4.5:1 in both themes */
+:root{--btn:#4a7a2c;--btn-d:#335a1c}
+.btn,.btn:hover,.tab-focus .tbtn.primary,.tab-focus .tmode.active,.hb-add,.tab-calendar .cal-cell.today .cal-day{background:var(--btn)}
+.tab-focus .tmode.active,.tab-focus .tbtn.primary,.btn{box-shadow:inset 0 -3px 0 var(--btn-d)}
+.hb-add{box-shadow:inset 0 -3px 0 var(--btn-d)}
+.tab-calendar .cal-cell.today{border-color:var(--btn-d);box-shadow:0 3px 0 var(--btn-d)}
+.tab-focus .timer-mode-label{text-shadow:var(--outline2)}
+.tag{font-family:var(--pixel);font-size:11px;font-weight:600}
