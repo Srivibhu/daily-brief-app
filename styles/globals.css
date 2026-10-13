@@ -75,7 +75,7 @@ body{font-family:var(--serif);background:var(--bg);color:var(--text);min-height:
    Text that floats on it gets a hard 1px outline in the opposite tone, the way games letter text over art. */
 .scene{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:var(--bg)}
 .scene-art{position:absolute}
-.scene-img{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none}
+.scene-img{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none;image-rendering:pixelated}
 .scene-img.night{opacity:0;transition:opacity .7s ease}
 .scene-img.night.on{opacity:1}
 .scene-fx{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useTheme } from '../lib/theme'
-import { createCritters } from '../lib/critters'
+import { createCritters, pxRect, pxEllipse, snap, P } from '../lib/critters'
 import { createPet } from '../lib/pet'
 
 // The illustrated cliffside behind every page (public/scene/*.webp, one layout for day and night),
@@ -73,14 +73,17 @@ export default function SceneBackdrop() {
 
   // animation loop (~12 fps, paused when the tab is hidden, off for reduced motion)
   useEffect(() => {
+    // the canvas is the art's own pixel grid (one cell = 3 art pixels); everything is drawn in art coordinates
     const ctx = cv.current.getContext('2d')
+    ctx.setTransform(1 / P, 0, 0, 1 / P, 0, 0)
     ctx.imageSmoothingEnabled = false
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const R = rng(42)
     const streaks = SCENE.falls.flatMap((f, fi) => {
       const out = []
-      for (let x = f.x0 + 4; x < f.x1 - 3; x += f.main ? 5 : 4) {
-        out.push({ fi, x: x + Math.floor(R() * 3), len: 10 + Math.floor(R() * 26), sp: 3 + Math.floor(R() * 4), ph: Math.floor(R() * 400) })
+      for (let x = snap(f.x0 + 6); x < f.x1 - 3; x += P * 2) {
+        if (R() < 0.35) continue
+        out.push({ fi, x, len: P * (4 + Math.floor(R() * 8)), sp: P * (1 + Math.floor(R() * 2)), ph: P * Math.floor(R() * 140) })
       }
       return out
     })
@@ -101,9 +104,9 @@ export default function SceneBackdrop() {
       for (const st of streaks) {
         const fl = SCENE.falls[st.fi], span = fl.y1 - fl.y0 + st.len
         const y = fl.y0 - st.len + ((st.ph + f * st.sp) % span)
-        ctx.fillStyle = dark ? 'rgba(190,215,255,0.20)' : 'rgba(255,255,255,0.42)'
+        ctx.fillStyle = dark ? 'rgba(190,215,255,0.28)' : 'rgba(255,255,255,0.55)'
         const yTop = Math.max(fl.y0, y), yBot = Math.min(fl.y1 - 6, y + st.len)
-        if (yBot > yTop) ctx.fillRect(st.x, yTop, 2, yBot - yTop)
+        if (yBot > yTop) pxRect(ctx, st.x, yTop, P, yBot - yTop)
       }
       // foam flicker where the main fall hits the pool
       const mf = SCENE.falls[0]
@@ -111,14 +114,13 @@ export default function SceneBackdrop() {
       for (let i = 0; i < 46; i++) {
         const hx = hash(i, f >> 1, 1), hy = hash(i, f >> 1, 2)
         const x = mf.x0 - 10 + hx * (mf.x1 - mf.x0 + 20), y = mf.y1 - 14 + hy * hy * 18
-        ctx.fillRect(Math.round(x), Math.round(y), hx > 0.8 ? 4 : 3, 3)
+        pxRect(ctx, x, y, hx > 0.8 ? 6 : 3, 3)
       }
       // pool ripples spreading from the fall
       for (let k = 0; k < 3; k++) {
         const t = ((f + k * 22) % 66) / 66, a = (1 - t) * (dark ? 0.35 : 0.55)
-        ctx.strokeStyle = dark ? `rgba(170,200,240,${a})` : `rgba(255,255,255,${a})`
-        ctx.lineWidth = 2
-        ctx.beginPath(); ctx.ellipse(SCENE.pool.cx, SCENE.pool.cy + 6, 100 + t * 170, 10 + t * 26, 0, 0, Math.PI * 2); ctx.stroke()
+        ctx.fillStyle = dark ? `rgba(170,200,240,${a})` : `rgba(255,255,255,${a})`
+        pxEllipse(ctx, SCENE.pool.cx, SCENE.pool.cy + 6, 100 + t * 170, 10 + t * 26)
       }
 
       // dog, frogs, rabbits, birds
@@ -131,21 +133,24 @@ export default function SceneBackdrop() {
         // windows breathe, lanterns glow, stars twinkle, fireflies drift
         SCENE.windows.forEach(([x, y, ww, hh], i) => {
           ctx.fillStyle = `rgba(255,200,110,${0.08 + 0.08 * Math.sin((f + winPh[i]) / 9)})`
-          ctx.fillRect(x, y, ww, hh)
+          pxRect(ctx, x, y, ww, hh)
         })
         for (const [x, y] of SCENE.lanterns) {
-          const g = ctx.createRadialGradient(x, y, 0, x, y, 22)
-          g.addColorStop(0, `rgba(255,205,120,${0.32 + 0.08 * Math.sin(f / 7 + x)})`); g.addColorStop(1, 'rgba(255,205,120,0)')
-          ctx.fillStyle = g; ctx.fillRect(x - 22, y - 22, 44, 44)
+          // stepped pixel glow: three rings of cells, brighter toward the lamp
+          const a = 0.16 + 0.05 * Math.sin(f / 7 + x)
+          for (const [r, k] of [[21, 1], [14, 1.6], [7, 2.4]]) {
+            ctx.fillStyle = `rgba(255,205,120,${a * k / 2.4})`
+            for (let dy = -r; dy <= r; dy += P) for (let dx = -r; dx <= r; dx += P) if (dx * dx + dy * dy <= r * r && dx * dx + dy * dy > (r - 7) * (r - 7)) pxRect(ctx, x + dx, y + dy)
+          }
         }
-        for (const s of stars) if ((f + s.ph) % 60 < 6) { ctx.fillStyle = 'rgba(255,255,240,0.9)'; ctx.fillRect(s.x - 1, s.y, 3, 1); ctx.fillRect(s.x, s.y - 1, 1, 3) }
+        for (const s of stars) if ((f + s.ph) % 60 < 6) { ctx.fillStyle = 'rgba(255,255,240,0.9)'; pxRect(ctx, s.x - 3, s.y); pxRect(ctx, s.x + 3, s.y); pxRect(ctx, s.x, s.y - 3); pxRect(ctx, s.x, s.y + 3) }
         for (const fl of flies) {
           const t = f * 0.05 * fl.sp + fl.ph
           const x = fl.x + Math.sin(t * 0.9) * 24, y = fl.y + Math.sin(t * 1.4) * 12
           const on = Math.sin(t * 2.1) > -0.1
           if (on) {
-            ctx.fillStyle = 'rgba(250,236,140,0.95)'; ctx.fillRect(x, y, 3, 3)
-            ctx.fillStyle = 'rgba(250,236,140,0.25)'; ctx.fillRect(x - 3, y - 3, 9, 9)
+            ctx.fillStyle = 'rgba(250,236,140,0.25)'; pxRect(ctx, x - 3, y - 3, 9, 9)
+            ctx.fillStyle = 'rgba(250,236,140,0.95)'; pxRect(ctx, x, y)
           }
         }
       }
@@ -170,7 +175,7 @@ export default function SceneBackdrop() {
       <div className="scene-art" ref={wrap}>
         <img ref={dayImg} src="/scene/day.webp" alt="" className="scene-img" />
         <img ref={nightImg} src="/scene/night.webp" alt="" className={`scene-img night${theme === 'dark' ? ' on' : ''}`} />
-        <canvas ref={cv} width={SCENE.w} height={SCENE.h} className="scene-fx" />
+        <canvas ref={cv} width={Math.ceil(SCENE.w / 3)} height={Math.ceil(SCENE.h / 3)} className="scene-fx" />
       </div>
     </div>
   )

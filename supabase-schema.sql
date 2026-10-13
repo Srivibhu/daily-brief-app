@@ -83,3 +83,15 @@ CREATE TABLE IF NOT EXISTS activity (
   count INT NOT NULL DEFAULT 0,
   PRIMARY KEY (user_id, date)
 );
+
+-- The pet (created on first use by /api/pet as well): name, worn skin, owned skins, what's been spent.
+-- Earnings are computed from focus_sessions (10 lilies per hour) and finished tasks (1 pearl bag per 3).
+CREATE TABLE IF NOT EXISTS pets (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL DEFAULT '',
+  skin TEXT NOT NULL DEFAULT 'bluebird',
+  owned TEXT[] NOT NULL DEFAULT '{bluebird}',
+  spent_lilies INT NOT NULL DEFAULT 0,
+  spent_pearls INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
