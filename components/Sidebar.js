@@ -1,17 +1,10 @@
-import { Donut, WeekBars } from './charts'
-import { weekData } from './FocusTab'
-import { urgencyInfo, dateStr, todayStr, TIPS } from '../lib/util'
+import { urgencyInfo, dateStr, TIPS } from '../lib/util'
 
-export default function Sidebar({ tasks, sessions, activity }) {
+// Right-hand column: what's coming up, and how the last four weeks went.
+// Plain sections on the page — no panels. (The old Progress list and Completion donut
+// repeated the task cards and the header summary, so they're gone.)
+export default function Sidebar({ tasks, activity, onOpen }) {
   const now = new Date()
-  const h = now.getHours()
-  const done = tasks.filter(t => t.progress === 100).length
-  const inprog = tasks.filter(t => t.progress > 0 && t.progress < 100).length
-  const todo = tasks.filter(t => t.progress === 0).length
-  const overall = tasks.length ? Math.round(tasks.reduce((s, t) => s + t.progress, 0) / tasks.length) : 0
-  const dueToday = tasks.filter(t => t.due === todayStr() && t.progress < 100).length
-  const mins = sessions.filter(s => s.date === todayStr()).reduce((a, s) => a + s.minutes, 0)
-  const { labels, data } = weekData(sessions)
   const soon = tasks.filter(t => t.due && t.progress < 100).map(t => ({ ...t, u: urgencyInfo(t.due) }))
     .filter(t => t.u.diff <= 7).sort((a, b) => a.u.diff - b.u.diff)
   const cells = Array.from({ length: 28 }, (_, i) => {
@@ -19,58 +12,32 @@ export default function Sidebar({ tasks, sessions, activity }) {
     const k = dateStr(d), c = activity[k] || 0
     return { k, c, l: c === 0 ? 0 : c <= 2 ? 1 : c <= 5 ? 2 : 3 }
   })
+  const activeDays = cells.filter(c => c.c > 0).length
 
   return (
-    <div className="sidebar">
-      <div className="panel hero">
-        <div className="brief-date">{now.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</div>
-        <div className="greeting">{h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}</div>
-        <div className="hero-sub">
-          {dueToday ? `${dueToday} task${dueToday !== 1 ? 's' : ''} due today` : 'Nothing due today'} · {overall}% complete overall
-        </div>
-      </div>
-      <div className="panel">
-        <div className="sec-label">Progress</div>
-        {!tasks.length && <div className="empty" style={{ padding: '5px 0', fontSize: 12 }}>No tasks yet</div>}
-        {tasks.map(t => (
-          <div className="brief-task" key={t.id}>
-            <span className="brief-name" title={t.name}>{t.name}</span>
-            <div className="brief-mini"><div className={`brief-fill${t.progress === 100 ? ' done' : ''}`} style={{ width: t.progress + '%' }} /></div>
-            <span className="brief-pct">{t.progress}%</span>
-          </div>
-        ))}
-      </div>
-      <div className="panel">
-        <div className="sec-label">Focus Today</div>
-        <div className="focus-today-mini"><div className="mins">{mins}</div><div className="label">minutes focused</div></div>
-        <div className="focus-week-mini-wrap"><WeekBars labels={labels} data={data} /></div>
-      </div>
-      <div className="panel">
-        <div className="sec-label">Due Soon</div>
-        {!soon.length && <div className="empty" style={{ padding: '5px 0', fontSize: 12 }}>No upcoming deadlines</div>}
-        {soon.map(t => (
-          <div className="due-item" key={t.id}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: t.u.color, flexShrink: 0, display: 'inline-block' }} />
-            <span className="due-name">{t.name}</span>
-            <span style={{ fontFamily: 'var(--sans)', fontSize: 10, fontWeight: 700, color: t.u.color }}>{t.u.label}</span>
-          </div>
-        ))}
-      </div>
-      <div className="panel" style={{ paddingBottom: 9 }}>
-        <div className="sec-label">Completion</div>
-        <div className="donut-wrap">
-          <Donut done={done} inprog={inprog} todo={todo} />
-          <div className="donut-center"><div className="big">{overall}%</div><div className="sm">complete</div></div>
-        </div>
-      </div>
-      <div className="panel">
-        <div className="sec-label">28-Day Activity</div>
+    <aside className="sidebar">
+      <section>
+        <h2 className="aside-label">Next 7 days</h2>
+        {!soon.length && <p className="aside-empty">Nothing due this week.</p>}
+        <ol className="due-list">
+          {soon.slice(0, 8).map(t => (
+            <li key={t.id}>
+              <button className="due-item" onClick={() => onOpen(t.id)}>
+                <span className="due-name">{t.name}</span>
+                <span className={`due-when ${t.u.cls}`}>{t.u.label}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+        {soon.length > 8 && <p className="aside-empty">+{soon.length - 8} more</p>}
+      </section>
+
+      <section>
+        <h2 className="aside-label">Last 4 weeks <span className="aside-note">{activeDays} active days</span></h2>
         <div className="activity-grid">{cells.map(c => <div key={c.k} className={`act-cell act-${c.l}`} title={`${c.k}: ${c.c}`} />)}</div>
-      </div>
-      <div className="tip-panel">
-        <div className="tip-label">Focus</div>
-        <div className="tip-text">{TIPS[now.getDay() % TIPS.length]}</div>
-      </div>
-    </div>
+      </section>
+
+      <p className="tip-line">{TIPS[now.getDay() % TIPS.length]}</p>
+    </aside>
   )
 }

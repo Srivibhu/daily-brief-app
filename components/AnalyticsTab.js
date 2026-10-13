@@ -32,9 +32,9 @@ export default function AnalyticsTab({ tasks, sessions }) {
   ]
   return (
     <div>
-      <div className="stat-grid">
-        {stats.map(([l, v, c]) => <div className="stat" key={l}><div className="n" style={{ color: c || 'var(--text)', fontSize: 20 }}>{v}</div><div className="l">{l}</div></div>)}
-      </div>
+      <dl className="figures">
+        {stats.map(([l, v, c]) => <div className="figure" key={l}><dd style={{ color: c || 'var(--text)' }}>{v}</dd><dt>{l}</dt></div>)}
+      </dl>
       <div className="field-label" style={{ marginTop: 4 }}>Weekly tasks — scheduled vs completed</div>
       {!weeks.length && <div className="empty">No task history yet</div>}
       {[...weeks].reverse().map(w => (

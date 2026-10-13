@@ -42,17 +42,18 @@ export default function PixelTimer({ mode, running, secs, total, count, scale = 
   )
 }
 
-// Tiny static-ish tomato for the tab label
-export function PixelTomato() {
+// Tiny tomato for the tab label. It holds still unless a session is running,
+// so the motion means something ("timer is going") instead of being constant noise.
+export function PixelTomato({ animate = false }) {
   const ref = useRef(null)
   useEffect(() => {
     const ctx = ref.current.getContext('2d')
     drawTomatoIcon(ctx, 0)
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reduced) return
+    if (reduced || !animate) return
     let f = 0
     const id = setInterval(() => drawTomatoIcon(ctx, ++f), 700)
     return () => clearInterval(id)
-  }, [])
+  }, [animate])
   return <canvas ref={ref} className="pixel-tomato" width={10} height={10} aria-hidden="true" />
 }

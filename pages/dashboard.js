@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
-import TaskCard from '../components/TaskCard'
+import CategoryStacks from '../components/CategoryStacks'
+import TaskDetail from '../components/TaskDetail'
 import FocusTab from '../components/FocusTab'
 import CalendarTab from '../components/CalendarTab'
 import AnalyticsTab from '../components/AnalyticsTab'
@@ -10,9 +11,12 @@ import ThemeToggle from '../components/ThemeToggle'
 import { PixelTomato } from '../components/PixelTimer'
 import { useTimer } from '../lib/useTimer'
 import { useReminders } from '../lib/useReminders'
-import { api, todayStr, dateStr, statusOf, urgencyInfo, PRIORITY_CYCLE, PRIORITY_SORT } from '../lib/util'
+import { api, todayStr, statusOf, urgencyInfo, PRIORITY_SORT } from '../lib/util'
 
-const TABS = [['tasks', 'Tasks'], ['focus', <span className="tab-label"><PixelTomato />Focus</span>], ['calendar', 'Calendar'], ['analytics', 'Analytics']]
+// Categories shown first, in this order (from the sketch); any other tag gets its own stack after them.
+const CATEGORY_ORDER = ['Study', 'Work', 'Health']
+const categoryOf = t => CATEGORY_ORDER.find(c => (t.tags || []).includes(c)) || (t.tags || [])[0] || 'Unsorted'
+const mmss = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 
 export default function Dashboard() {
   const router = useRouter()
@@ -25,7 +29,8 @@ export default function Dashboard() {
   const [tab, setTab] = useState('tasks')
   const [filter, setFilter] = useState('all')
   const [sort, setSort] = useState('due')
-  const [openIds, setOpenIds] = useState(new Set())
+  const [detailId, setDetailId] = useState(null)
+  const [expanded, setExpanded] = useState(new Set())
   const [doneOpen, setDoneOpen] = useState(false)
   const [showTags, setShowTags] = useState(false)
   const [focusTaskId, setFocusTaskId] = useState(null)
@@ -89,11 +94,6 @@ export default function Dashboard() {
     recordActivity()
   }
 
-  function cyclePriority(id) {
-    const t = tasks.find(x => x.id === id); if (!t) return
-    updateTask(id, { priority: PRIORITY_CYCLE[(PRIORITY_CYCLE.indexOf(t.priority || null) + 1) % PRIORITY_CYCLE.length] })
-  }
-
   async function addTask() {
     const name = nq.name.trim(); if (!name) return
     const data = await api('/api/tasks', { method: 'POST', body: { name, due: nq.due || null, due_time: nq.time || null, tags: nq.tag ? [nq.tag] : [] } })
@@ -135,131 +135,146 @@ export default function Dashboard() {
   if (authLoading) return <div className="center-screen">Loading…</div>
 
   // ── Derived ──────────────────────────────────────────────────────────────────
-  const total = tasks.length
-  const nDone = tasks.filter(t => t.progress === 100).length
-  const nProg = tasks.filter(t => t.progress > 0 && t.progress < 100).length
-  const nTodo = tasks.filter(t => t.progress === 0).length
+  const live = tasks.filter(t => t.progress < 100)
+  const nProg = live.filter(t => t.progress > 0).length
+  const nDueToday = live.filter(t => t.due === today).length
+  const nOverdue = live.filter(t => { const u = urgencyInfo(t.due); return u && u.diff < 0 }).length
+  const overall = tasks.length ? Math.round(tasks.reduce((s, t) => s + t.progress, 0) / tasks.length) : 0
   const todayMins = sessions.filter(s => s.date === today).reduce((a, s) => a + s.minutes, 0)
 
   const filtered = tasks.filter(t => {
-    if (filter === 'all') return true
     if (filter === 'todo') return statusOf(t) === 'todo'
     if (filter === 'inprog') return statusOf(t) === 'inprog'
     if (filter === 'overdue') { const u = urgencyInfo(t.due); return u && u.diff < 0 && t.progress < 100 }
     if (filter === 'today') return t.due === today && t.progress < 100
-    if (filter.startsWith('tag:')) return (t.tags || []).includes(filter.slice(4))
     return true
   })
   const sortFn = (a, b) => {
     if (sort === 'due') { if (!a.due && !b.due) return 0; if (!a.due) return 1; if (!b.due) return -1; return a.due < b.due ? -1 : a.due > b.due ? 1 : 0 }
     if (sort === 'priority') return PRIORITY_SORT[a.priority || 'null'] - PRIORITY_SORT[b.priority || 'null']
-    if (sort === 'progress') return a.progress - b.progress
+    if (sort === 'progress') return b.progress - a.progress
     return (b.created_at || '').localeCompare(a.created_at || '')
   }
   const active = filtered.filter(t => t.progress < 100).sort(sortFn)
-  const done = filtered.filter(t => t.progress === 100).sort(sortFn)
-  const inprog = active.filter(t => t.progress > 0), todo = active.filter(t => t.progress === 0)
+  const done = tasks.filter(t => t.progress === 100).sort((a, b) => (b.completed_at || '').localeCompare(a.completed_at || ''))
 
-  const toggleOpen = id => setOpenIds(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
-  const card = (t, i) => (
-    <TaskCard key={t.id} task={t} idx={i} tags={tags} open={openIds.has(t.id)} onToggle={() => toggleOpen(t.id)}
-      onProgress={setProgress} onUpdate={updateTask} onDelete={deleteTask} onCyclePriority={cyclePriority} />
-  )
-  const group = (label, color, n, extra) => (
-    <div className="card-group-header" onClick={extra?.onClick} style={extra?.style}>
-      <span style={{ width: 7, height: 7, borderRadius: '50%', display: 'inline-block', background: color }} />
-      {label}<span className="group-count">{n}</span>
-      {extra?.toggle && <span className="group-toggle">{extra.toggle}</span>}
-    </div>
-  )
+  // group into category stacks
+  const byCat = {}
+  active.forEach(t => (byCat[categoryOf(t)] ||= []).push(t))
+  const catNames = [...CATEGORY_ORDER, ...tags.map(g => g.name).filter(n => !CATEGORY_ORDER.includes(n)), 'Unsorted']
+  const groups = catNames.filter(n => byCat[n]).map(n => ({ name: n, color: (tags.find(g => g.name === n) || {}).color || 'var(--m-soft)', tasks: byCat[n] }))
+  const toggleExpand = name => setExpanded(s => { const n = new Set(s); n.has(name) ? n.delete(name) : n.add(name); return n })
+  const detailTask = detailId && tasks.find(t => t.id === detailId)
 
-  const pills = [{ v: 'all', l: 'All' }, { v: 'todo', l: 'To Do' }, { v: 'inprog', l: 'In Progress' }, { v: 'overdue', l: 'Overdue' }, { v: 'today', l: 'Due Today' },
-    ...tags.map(t => ({ v: 'tag:' + t.name, l: t.name, color: t.color }))]
-  const pillStyle = (o, a) => o.color
-    ? (a ? { background: o.color, borderColor: o.color, color: '#fff' } : { borderColor: o.color + '40', color: o.color })
-    : o.v === 'overdue' ? (a ? { background: 'var(--red)', borderColor: 'var(--red)', color: '#fff' } : { borderColor: 'var(--red)', color: 'var(--red)' })
-    : o.v === 'today' ? (a ? { background: 'var(--amber)', borderColor: 'var(--amber)', color: '#fff' } : { borderColor: 'var(--amber)', color: 'var(--amber)' }) : undefined
+  const h = new Date().getHours()
+  const name = user?.username ? user.username[0].toUpperCase() + user.username.slice(1) : ''
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
+
+  const FILTERS = [['all', 'All', live.length], ['today', 'Due today', nDueToday], ['overdue', 'Overdue', nOverdue], ['inprog', 'In progress', nProg], ['todo', 'Not started', live.length - nProg]]
+  const TABS = [
+    ['tasks', 'Tasks'],
+    ['focus', <span className="tab-label"><PixelTomato animate={timer.running} />Focus{timer.running && tab !== 'focus' && <span className="tab-timer">{mmss(timer.secs)}</span>}</span>],
+    ['calendar', 'Calendar'],
+    ['analytics', 'Analytics'],
+  ]
 
   return (
-    <div style={{ maxWidth: 1240, margin: '0 auto' }}>
-      <div className="top-bar">
-        <div>
-          <h1>Daily Brief</h1>
-          <div className="sub">{new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
-        </div>
-        <div className="top-actions">
-          <span className="user-chip">@{user?.username}</span>
+    <div className="shell">
+      <header className="masthead">
+        <span className="wordmark">Daily Brief</span>
+        <nav className="quiet-actions" aria-label="Account">
           <ThemeToggle />
-          <button className="btn ghost sm" onClick={() => setShowTags(true)}>🏷 Tags</button>
-          <button className="btn ghost sm" onClick={exportData}>Export</button>
-          <button className="btn ghost sm" onClick={logout}>Sign out</button>
-        </div>
-      </div>
+          <button className="link-btn" onClick={() => setShowTags(true)}>Tags</button>
+          <button className="link-btn" onClick={exportData}>Export</button>
+          <button className="link-btn" onClick={logout}>Sign out</button>
+        </nav>
+      </header>
 
-      <div className="stats">
-        {[[total, 'Total', 'n-all'], [nDone, 'Done', 'n-done'], [nProg, 'In Progress', 'n-prog'], [nTodo, 'To Do', 'n-todo'], [todayMins + 'm', 'Focus Today', 'n-focus']].map(([n, l, c]) => (
-          <div className="stat" key={l}><div className={`n ${c}`}>{n}</div><div className="l">{l}</div></div>
-        ))}
-      </div>
+      <section className="hello">
+        <div className="dateline">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+        <h1>{h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}{name && `, ${name}`}</h1>
+        <p className="summary">
+          {nDueToday ? <><b>{plural(nDueToday, 'task')}</b> due today</> : 'Nothing due today'}
+          {nOverdue > 0 && <>, <b className="warn">{nOverdue} overdue</b></>}.{' '}
+          <b>{nProg}</b> in progress, <b>{todayMins} min</b> focused, <b>{overall}%</b> through the list.
+        </p>
+      </section>
 
-      <div className="page">
-        <div>
-          <div className="panel">
-            <div className="tabs">
-              {TABS.map(([k, l]) => <div key={k} className={`tab${tab === k ? ' active' : ''}`} onClick={() => setTab(k)}>{l}</div>)}
-            </div>
+      <nav className="tabs" role="tablist">
+        {TABS.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={`tab${tab === k ? ' active' : ''}`} onClick={() => setTab(k)}>{l}</button>)}
+      </nav>
 
-            {tab === 'tasks' && (
-              <div>
-                <div className="quick-add">
-                  <span className="quick-add-icon">+</span>
-                  <input className="quick-add-input" placeholder="Add a task — press Enter" value={nq.name}
-                    onChange={e => setNq({ ...nq, name: e.target.value })} onKeyDown={e => e.key === 'Enter' && addTask()} />
-                  <input type="date" className="quick-add-due" title="Due date" value={nq.due} onChange={e => setNq({ ...nq, due: e.target.value })} />
-                  <input type="time" className="quick-add-time" title="Due time" value={nq.time} onChange={e => setNq({ ...nq, time: e.target.value })} />
-                  <select className="quick-add-tag" value={nq.tag} onChange={e => setNq({ ...nq, tag: e.target.value })}>
-                    <option value="">Tag</option>
+      <div className={`page${tab === 'tasks' ? '' : ' wide'}`}>
+        <main>
+          {tab === 'tasks' && (
+            <>
+              <div className={`quick-add${nq.name ? ' has-text' : ''}`}>
+                <input className="quick-add-input" placeholder="Add a task…" value={nq.name} aria-label="New task"
+                  onChange={e => setNq({ ...nq, name: e.target.value })} onKeyDown={e => e.key === 'Enter' && addTask()} />
+                <div className="quick-add-fields">
+                  <select className="qa-field" value={nq.tag} aria-label="Category" onChange={e => setNq({ ...nq, tag: e.target.value })}>
+                    <option value="">No category</option>
                     {tags.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
                   </select>
-                  <button className="quick-add-submit" onClick={addTask}>Add ↵</button>
+                  <input type="date" className="qa-field" aria-label="Due date" value={nq.due} onChange={e => setNq({ ...nq, due: e.target.value })} />
+                  <input type="time" className="qa-field" aria-label="Due time" value={nq.time} onChange={e => setNq({ ...nq, time: e.target.value })} />
+                  <button className="qa-submit" onClick={addTask} disabled={!nq.name.trim()}>Add</button>
                 </div>
-                <div className="task-toolbar">
-                  <div className="filter-pills">
-                    {pills.map(o => <button key={o.v} className={`pill${filter === o.v ? ' active' : ''}`} style={pillStyle(o, filter === o.v)} onClick={() => setFilter(o.v)}>{o.l}</button>)}
-                  </div>
-                  <select value={sort} aria-label="Sort tasks" onChange={e => setSort(e.target.value)} style={{ background: 'transparent', border: '1px solid var(--b2)', borderRadius: 20, color: 'var(--sub)', fontFamily: 'var(--sans)', fontSize: 11, padding: '3px 10px', cursor: 'pointer', outline: 'none', width: 'auto' }}>
-                    <option value="due">⇅ Due</option><option value="created">⇅ Newest</option>
-                    <option value="priority">⇅ Priority</option><option value="progress">⇅ Progress</option>
-                  </select>
-                </div>
-
-                {!filtered.length && <div className="empty">No tasks here — add one above</div>}
-                {filter === 'all' ? (
-                  <>
-                    {inprog.length > 0 && <>{group('In Progress', 'var(--amber)', inprog.length)}{inprog.map(card)}</>}
-                    {todo.length > 0 && <>{group('To Do', 'var(--dim)', todo.length, { style: { marginTop: inprog.length ? 4 : 0 } })}{todo.map(card)}</>}
-                  </>
-                ) : active.map(card)}
-                {done.length > 0 && (
-                  <>
-                    {group('Done', 'var(--green)', done.length, { onClick: () => setDoneOpen(!doneOpen), toggle: doneOpen ? '▾' : '▸', style: { marginTop: 8 } })}
-                    {doneOpen && done.map(card)}
-                  </>
-                )}
               </div>
-            )}
 
-            {tab === 'focus' && (
-              <FocusTab timer={timer} tasks={tasks} sessions={sessions} focusTaskId={focusTaskId} setFocusTaskId={setFocusTaskId}
-                onDeleteSession={deleteSession} onManualLog={manualLog} />
-            )}
-            {tab === 'calendar' && <CalendarTab tasks={tasks} tags={tags} />}
-            {tab === 'analytics' && <AnalyticsTab tasks={tasks} sessions={sessions} />}
-          </div>
-        </div>
-        <Sidebar tasks={tasks} sessions={sessions} activity={activity} />
+              <div className="task-toolbar">
+                <div className="filters">
+                  {FILTERS.map(([v, l, n]) => (
+                    <button key={v} className={`filter${filter === v ? ' active' : ''}${v === 'overdue' && n ? ' warn' : ''}`} onClick={() => setFilter(v)}>
+                      {l}<span className="filter-n">{n}</span>
+                    </button>
+                  ))}
+                </div>
+                <label className="sort">
+                  <span>Sort</span>
+                  <select value={sort} onChange={e => setSort(e.target.value)}>
+                    <option value="due">Due date</option><option value="priority">Priority</option>
+                    <option value="progress">Progress</option><option value="created">Newest</option>
+                  </select>
+                </label>
+              </div>
+
+              {!groups.length && <p className="empty">{filter === 'all' ? 'No open tasks. Add one above.' : 'Nothing matches this filter.'}</p>}
+              <CategoryStacks groups={groups} expanded={expanded} onToggleExpand={toggleExpand} onOpen={setDetailId} onProgress={setProgress} />
+
+              {done.length > 0 && (
+                <section className="done">
+                  <button className="done-toggle" aria-expanded={doneOpen} onClick={() => setDoneOpen(!doneOpen)}>
+                    {doneOpen ? '▾' : '▸'} Done <span className="filter-n">{done.length}</span>
+                  </button>
+                  {doneOpen && (
+                    <ul className="done-list">
+                      {done.map(t => (
+                        <li key={t.id}>
+                          <button className="card-check done" aria-label="Mark incomplete" onClick={() => setProgress(t.id, 0)} />
+                          <button className="done-name" onClick={() => setDetailId(t.id)}>{t.name}</button>
+                          <span className="done-when">{t.completed_at}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              )}
+            </>
+          )}
+
+          {tab === 'focus' && (
+            <FocusTab timer={timer} tasks={tasks} sessions={sessions} focusTaskId={focusTaskId} setFocusTaskId={setFocusTaskId}
+              onDeleteSession={deleteSession} onManualLog={manualLog} />
+          )}
+          {tab === 'calendar' && <CalendarTab tasks={tasks} tags={tags} />}
+          {tab === 'analytics' && <AnalyticsTab tasks={tasks} sessions={sessions} />}
+        </main>
+        {tab === 'tasks' && <Sidebar tasks={tasks} activity={activity} onOpen={setDetailId} />}
       </div>
 
+      {detailTask && <TaskDetail key={detailTask.id} task={detailTask} tags={tags} onClose={() => setDetailId(null)}
+        onProgress={setProgress} onUpdate={updateTask} onDelete={deleteTask} />}
       {showTags && <TagModal tags={tags} setTags={setTags} onClose={() => setShowTags(false)} />}
     </div>
   )
