@@ -73,11 +73,11 @@ body{font-family:var(--serif);background:var(--bg);color:var(--text);min-height:
 
 /* The veil: no colour at all — just the scene itself, blurred, behind the content column.
    The blur fades out at the sides so the sharp pixel art returns gradually at the edges. */
-:root{--veil-filter:blur(14px) brightness(1.14) saturate(.85);
+:root{--veil-filter:blur(2px) brightness(1.14) saturate(.85);
   /* a soft, blurred cloud of light under each line of text — no panel, just enough to keep it readable */
   --h:242,243,234;
   --halo:0 0 2px rgba(var(--h),1),0 0 4px rgba(var(--h),1),0 0 4px rgba(var(--h),1),0 0 6px rgba(var(--h),1),0 0 6px rgba(var(--h),1),0 0 9px rgba(var(--h),1),0 0 14px rgba(var(--h),.85),0 0 24px rgba(var(--h),.55),0 0 40px rgba(var(--h),.3)}
-:root[data-theme="dark"]{--veil-filter:blur(14px) brightness(.72);--h:18,15,11}
+:root[data-theme="dark"]{--veil-filter:blur(2px) brightness(.72);--h:18,15,11}
 .shell{text-shadow:var(--halo)}
 .shell button{text-shadow:inherit}
 /* inputs and truncated names clip text-shadow into hard rectangles, so they get the same halo as a filter instead (filters aren't clipped) */
