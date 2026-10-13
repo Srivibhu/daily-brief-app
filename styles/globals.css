@@ -9,13 +9,13 @@
   --bg:#f0eee3; --s1:#fbfaf4; --s2:#f5f4ea; --s3:#ecebde; --s4:#dfe1cf;
   --b1:#d2d6bf; --b2:#e3e6d3;
   /* moss */
-  --m-deep:#3f4e2c; --m-main:#6a7c4b; --m-soft:#9aac78; --m-wash:#e6ead6;
+  --m-deep:#3f4e2c; --m-main:#5a6b3c; --m-soft:#9aac78; --m-wash:#e6ead6;
   --blue:var(--m-main); --blue2:#586a3d; --on-blue:#f8f6ec;
   --focus:var(--m-main); --focus-soft:var(--m-soft);
   /* text */
-  --text:#222a1b; --sub:#76806a; --dim:#b8bea4;
+  --text:#1b2215; --sub:#3f4834; --dim:#b8bea4;
   /* status — earthy, harmonised with moss */
-  --green:#5d7c47; --amber:#b28c3c; --orange:#bf7d53; --red:#b5675a;
+  --green:#3a5428; --amber:#6c4f12; --orange:#83431c; --red:#8e3628;
   /* tints & overlays */
   --tint-red:rgba(181,103,90,.13); --tint-amber:rgba(178,140,60,.16); --tint-moss:rgba(106,124,75,.15);
   --danger-line:rgba(181,103,90,.4); --danger-bg:rgba(181,103,90,.08);
@@ -40,7 +40,7 @@
   --b1:#514236; --b2:#372c23;
   --m-deep:#2c3821; --m-main:#7d915a; --m-soft:#a1b57b; --m-wash:#2b3322;
   --blue:var(--m-main); --blue2:#90a56b; --on-blue:#16100b;
-  --text:#efe7d8; --sub:#a89b86; --dim:#6a5b4d;
+  --text:#f3ecdf; --sub:#bdb09a; --dim:#6a5b4d;
   --green:#95b779; --amber:#d2ad66; --orange:#d9976f; --red:#d48b7d;
   --tint-red:rgba(212,139,125,.17); --tint-amber:rgba(210,173,102,.17); --tint-moss:rgba(125,145,90,.20);
   --danger-line:rgba(212,139,125,.4); --danger-bg:rgba(212,139,125,.10);
@@ -71,17 +71,24 @@ body{font-family:var(--serif);background:var(--bg);color:var(--text);min-height:
 /* pixel-art waterfall canvas (components/PixelBackdrop.js) sits behind everything */
 .pixel-backdrop{position:fixed;left:0;top:0;z-index:-1;pointer-events:none;image-rendering:pixelated;image-rendering:crisp-edges}
 
-/* The veil: a feathered wash over the scene behind the content column.
-   Text sits on calm ground, the waterfall stays visible at the edges and above the fold —
-   one soft field instead of a dozen bordered panels. */
-/* light: a thin blue mist (like spray off the falls) instead of a white haze */
-:root{--veil:rgba(218,232,236,.66);--veil-top:rgba(218,232,236,.22)}
-:root[data-theme="dark"]{--veil:rgba(14,22,27,.78);--veil-top:rgba(14,22,27,.35)}
+/* The veil: no colour at all — just the scene itself, blurred, behind the content column.
+   The blur fades out at the sides so the sharp pixel art returns gradually at the edges. */
+:root{--veil-filter:blur(14px) brightness(1.14) saturate(.85);
+  /* a soft, blurred cloud of light under each line of text — no panel, just enough to keep it readable */
+  --h:242,243,234;
+  --halo:0 0 2px rgba(var(--h),1),0 0 4px rgba(var(--h),1),0 0 4px rgba(var(--h),1),0 0 6px rgba(var(--h),1),0 0 6px rgba(var(--h),1),0 0 9px rgba(var(--h),1),0 0 14px rgba(var(--h),.85),0 0 24px rgba(var(--h),.55),0 0 40px rgba(var(--h),.3)}
+:root[data-theme="dark"]{--veil-filter:blur(14px) brightness(.72);--h:18,15,11}
+.shell{text-shadow:var(--halo)}
+.shell button{text-shadow:inherit}
+/* inputs and truncated names clip text-shadow into hard rectangles, so they get the same halo as a filter instead (filters aren't clipped) */
+:root{--halo-f:drop-shadow(0 0 2px rgba(var(--h),1)) drop-shadow(0 0 3px rgba(var(--h),1)) drop-shadow(0 0 5px rgba(var(--h),1)) drop-shadow(0 0 10px rgba(var(--h),.8)) drop-shadow(0 0 20px rgba(var(--h),.45))}
+.shell input,.shell select,.due-name{text-shadow:none;filter:var(--halo-f)}
+.task-card,.stack-peek,.modal,.btn,.qa-submit,.tbtn.primary,.tag-toggle.selected,.cal-cell.today .cal-day,.act-cell{text-shadow:none}
 .veil{position:fixed;top:0;bottom:0;left:50%;z-index:-1;pointer-events:none;
-  width:calc(min(100vw,1240px) + 240px);transform:translateX(-50%);
-  background:linear-gradient(180deg,var(--veil-top) 0,var(--veil-top) 120px,var(--veil) 360px);
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 120px,#000 calc(100% - 120px),transparent 100%);
-  mask-image:linear-gradient(90deg,transparent 0,#000 120px,#000 calc(100% - 120px),transparent 100%)}
+  width:calc(min(100vw,1240px) + 320px);transform:translateX(-50%);
+  -webkit-backdrop-filter:var(--veil-filter);backdrop-filter:var(--veil-filter);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 160px,#000 calc(100% - 160px),transparent 100%);
+  mask-image:linear-gradient(90deg,transparent 0,#000 160px,#000 calc(100% - 160px),transparent 100%)}
 
 /* ══ Shell ══ */
 .shell{max-width:1180px;margin:0 auto}
@@ -126,20 +133,20 @@ body{font-family:var(--serif);background:var(--bg);color:var(--text);min-height:
 .due-input:focus,.field-input:focus{border-color:var(--m-main)}
 button:focus-visible,input:focus-visible,select:focus-visible,.task-card:focus-visible{outline:2px solid var(--m-main);outline-offset:2px}
 .empty{font-family:var(--sans);color:var(--sub);font-size:13px;padding:24px 0}
-.u-overdue{color:var(--red)}.u-today{color:var(--amber)}.u-soon{color:var(--orange)}.u-upcoming{color:var(--m-main)}.u-later{color:var(--sub)}.u-done{color:var(--green)}
+.u-overdue{color:var(--red)}.u-today{color:var(--amber)}.u-soon{color:var(--orange)}.u-upcoming{color:var(--green)}.u-later{color:var(--sub)}.u-done{color:var(--green)}
 
 /* ══ Tasks ══ */
 /* quick add: one ruled line, details to the right */
 .quick-add{display:flex;align-items:center;gap:10px;border-bottom:1.5px solid var(--b1);margin-bottom:18px;transition:border-color .2s}
 .quick-add:focus-within{border-color:var(--m-main)}
 .quick-add-input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:var(--text);font-family:var(--serif);font-size:19px;padding:12px 0}
-.quick-add-input::placeholder{color:var(--dim)}
+.quick-add-input::placeholder{color:var(--sub)}
 .quick-add-fields{display:flex;align-items:center;gap:2px;flex-shrink:0}
 .qa-field{background:transparent;border:0;color:var(--sub);font-family:var(--sans);font-size:12px;padding:6px 8px;border-radius:6px;outline:none;cursor:pointer}
 .qa-field:hover{background:var(--hover-moss);color:var(--text)}
 .qa-field option{background:var(--s1);color:var(--text)}
 .qa-submit{font-family:var(--sans);font-size:12px;font-weight:700;color:var(--on-blue);background:var(--m-main);border:0;border-radius:7px;padding:7px 14px;margin-left:6px;cursor:pointer;transition:opacity .15s,background .15s}
-.qa-submit:disabled{opacity:.35;cursor:default}
+.qa-submit:disabled{background:transparent;color:var(--sub);box-shadow:inset 0 0 0 1px var(--sub);cursor:default}
 .qa-submit:not(:disabled):hover{background:var(--blue2)}
 
 .task-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:30px}
@@ -148,7 +155,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,.task-card:focus-v
 .filter:hover{color:var(--text)}
 .filter.active{color:var(--text);font-weight:600;border-bottom-color:var(--text)}
 .filter.warn .filter-n{color:var(--red)}
-.filter-n{font-size:10.5px;font-weight:600;color:var(--sub);opacity:.75;margin-left:5px;font-variant-numeric:tabular-nums}
+.filter-n{font-size:11px;font-weight:600;color:var(--sub);margin-left:5px;font-variant-numeric:tabular-nums}
 .filter.active .filter-n{color:var(--sub)}
 .sort{display:flex;align-items:center;gap:4px;font-family:var(--sans);font-size:12px;color:var(--sub);flex-shrink:0}
 .sort select{background:transparent;border:0;color:var(--sub);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;outline:none;padding:3px 0}
@@ -166,7 +173,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,.task-card:focus-v
 .stack-head{display:flex;align-items:baseline;gap:9px;margin-bottom:14px}
 .stack-head h3{font-size:19px;font-weight:700;letter-spacing:-.3px;color:var(--text)}
 .stack-dot{width:8px;height:8px;border-radius:50%;background:var(--cat);align-self:center;flex-shrink:0}
-.stack-count{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--sub)}
+.stack-count{font-family:var(--sans);font-size:11.5px;font-weight:600;color:var(--sub)}
 .stack-avg{margin-left:auto;font-family:var(--sans);font-size:11px;font-weight:600;color:var(--sub);font-variant-numeric:tabular-nums}
 
 .stack-pile{position:relative;--step:7px;--pad:calc(var(--depth,0) * var(--step));padding:0 var(--pad) var(--pad) 0}
@@ -182,7 +189,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,.task-card:focus-v
 @keyframes fan{from{opacity:0;transform:translateY(-18px) scale(.97)}to{opacity:1;transform:none}}
 .stack-toggle{display:flex;align-items:center;gap:8px;margin:12px auto 0;background:none;border:0;cursor:pointer;
   font-family:var(--sans);font-size:11.5px;font-weight:600;color:var(--sub);padding:4px 6px;transition:color .15s}
-.stack-arrow{width:24px;height:24px;border-radius:50%;border:1px solid var(--b1);display:inline-flex;align-items:center;justify-content:center;font-size:12px;transition:border-color .15s,background .15s,color .15s}
+.stack-arrow{width:24px;height:24px;border-radius:50%;border:1px solid var(--b1);color:var(--text);display:inline-flex;align-items:center;justify-content:center;font-size:12px;transition:border-color .15s,background .15s,color .15s}
 .stack-toggle:hover{color:var(--text)}
 .stack-toggle:hover .stack-arrow{border-color:var(--cat);color:var(--cat);background:color-mix(in srgb,var(--cat) 10%,transparent)}
 
@@ -274,7 +281,7 @@ input[type=range]{flex:1;accent-color:var(--m-main);cursor:pointer;height:4px}
 .due-list li:last-child .due-item{border-bottom:0}
 .due-name{flex:1;min-width:0;font-family:var(--serif);font-size:13.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .due-item:hover .due-name{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--dim)}
-.due-when{font-family:var(--sans);font-size:11px;font-weight:700;white-space:nowrap}
+.due-when{font-family:var(--sans);font-size:11.5px;font-weight:700;white-space:nowrap}
 .activity-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .act-cell{aspect-ratio:1;border-radius:3px}
 .act-0{background:var(--s3)}.act-1{background:var(--act-1)}.act-2{background:var(--act-2)}.act-3{background:var(--m-main)}
@@ -402,7 +409,7 @@ input,select{color-scheme:inherit}
 @media(max-width:560px){
   body{padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
   input,select,textarea,.notes-content{font-size:16px!important}
-  .veil{width:100vw;background:linear-gradient(180deg,var(--veil-top) 0,var(--veil) 260px);-webkit-mask-image:none;mask-image:none}
+  .veil{width:100vw;-webkit-mask-image:none;mask-image:none}
   .quiet-actions{gap:14px}
   .hello{margin:34px 0 26px}
   .hello h1{font-size:32px;letter-spacing:-.6px}
