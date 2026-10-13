@@ -878,3 +878,93 @@ kbd{font-family:var(--pixel);font-size:.9em;padding:0 5px;border:1px solid curre
 .del-confirm{display:inline-flex;align-items:center;gap:10px;font-family:var(--sans);font-size:13px;color:var(--text)}
 .danger-btn{background:#a3392b!important;color:#fff;box-shadow:inset 0 -3px 0 #6e2219!important}
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:300;background:var(--parch);border:2px solid var(--ink);border-radius:8px;box-shadow:0 4px 0 var(--ink);padding:8px 14px;font-family:var(--sans);font-size:13px;color:var(--text)}
+
+/* ══ The Everfall intro: the dog's speech scroll, in the DOM so it stays readable and announced ══ */
+.intro-scroll{position:fixed;z-index:260;display:flex;gap:12px;align-items:flex-start;
+  padding:12px 16px 14px;background:var(--parch);border:3px solid var(--ink);border-radius:10px;
+  box-shadow:0 5px 0 var(--ink),0 12px 30px rgba(0,0,0,.3);text-shadow:none;
+  animation:unroll .35s cubic-bezier(.2,.7,.2,1) both}
+@keyframes unroll{from{opacity:0;transform:var(--unroll-from,translateY(8px)) scaleY(.7)}to{opacity:1;transform:var(--unroll-to,none)}}
+/* rolled dowels top and bottom, so it reads as a scroll rather than a tooltip */
+.intro-scroll::before,.intro-scroll::after{content:'';position:absolute;left:-3px;right:-3px;height:7px;background:var(--parch-2);border:3px solid var(--ink);border-radius:4px}
+.intro-scroll::before{top:-8px}
+.intro-scroll::after{bottom:-8px}
+.is-face{flex:0 0 48px;width:48px;height:48px;display:block;image-rendering:pixelated;
+  background:var(--parch-2);border:2px solid var(--ink);border-radius:6px}
+.is-body{min-width:0;flex:1}
+.is-who{display:flex;align-items:baseline;gap:8px;font-family:var(--pixel);font-size:13px;font-weight:700;letter-spacing:.5px;color:var(--text);margin-bottom:6px}
+.is-count{margin-left:auto;font-size:12px;font-weight:600;color:var(--sub);font-variant-numeric:tabular-nums}
+.is-lines{display:flex;flex-direction:column;gap:6px}
+.is-line{font-family:var(--serif);font-size:15px;line-height:1.45;color:var(--text)}
+.is-foot{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:12px}
+.is-wait{flex:1;min-width:0;font-family:var(--sans);font-size:12px;font-weight:600;color:var(--sub)}
+.is-next{flex:0 0 auto}
+.is-next:disabled{opacity:.5;cursor:default}
+
+/* above the porch rail, placed from the same scene vars the zoned layout reads */
+.intro-scroll.at-porch{--dx:132;--dy:324;--unroll-from:translateY(-92%);--unroll-to:translateY(-100%);
+  left:max(8px,calc(var(--scene-l,0px) + var(--dx) * var(--scene-s,1) * 1px));
+  top:calc(var(--scene-t,0px) + var(--dy) * var(--scene-s,1) * 1px);
+  width:min(372px,calc(100vw - 32px));transform:translateY(-100%);flex-direction:column}
+/* a tail down onto the porch, pointing at whoever is talking */
+.intro-scroll.at-porch .is-body::after{content:'';position:absolute;left:26px;bottom:-22px;
+  border:8px solid transparent;border-top:12px solid var(--ink)}
+
+/* the game dialogue box: a strip above the hotbar, his portrait in the corner */
+.intro-scroll.at-bar{left:50%;transform:translateX(-50%);bottom:118px;width:min(640px,calc(100vw - 20px));
+  --unroll-from:translateX(-50%) translateY(10px);--unroll-to:translateX(-50%)}
+.intro-scroll.leaving{pointer-events:none}
+.intro-scroll.at-porch.leaving{animation:rollup-porch .4s ease-in forwards}
+.intro-scroll.at-bar.leaving{animation:rollup-bar .4s ease-in forwards}
+@keyframes rollup-porch{to{opacity:0;transform:translateY(-40%) scaleY(.2)}}
+@keyframes rollup-bar{to{opacity:0;transform:translateX(-50%) scaleY(.2)}}
+
+/* panels 06 and 07 open a sheet; lift it so the scroll is never behind one */
+.shell.intro-on .modal-back{padding-bottom:min(46vh,300px)}
+.shell.intro-on .modal{max-height:min(62vh,calc(100dvh - 280px))}
+.shell.paged.intro-on .modal-back{padding-bottom:calc(210px + env(safe-area-inset-bottom))}
+.shell.paged.intro-on .modal{border-radius:20px;max-height:min(58dvh,calc(100dvh - 250px))}
+/* keep the focus controls scrollable above the dialogue strip */
+.shell.paged.intro-on .page{padding-bottom:calc(250px + env(safe-area-inset-bottom))}
+
+/* wide screens: the bottom strip sits on the right, so the focus timer (and its link row) stay clear */
+@media(min-width:1100px){
+  .intro-scroll.at-bar{left:auto;right:24px;width:min(400px,32vw);transform:none;
+    --unroll-from:translateY(10px);--unroll-to:none}
+  .intro-scroll.at-bar.leaving{animation-name:rollup-porch}
+}
+@media(max-width:699px){
+  .intro-scroll.at-bar{bottom:calc(96px + env(safe-area-inset-bottom));padding:10px 12px 12px}
+  .is-line{font-size:14.5px}
+}
+@media(max-height:740px){
+  .intro-scroll.at-bar .is-lines{max-height:6.6em;overflow-y:auto}
+  .is-line{font-size:14px;line-height:1.35}
+}
+
+/* what he is pointing at. A static ring so it still reads under reduced motion, pulsing otherwise. */
+@keyframes intro-ping{0%,100%{outline-color:#ffd66e;outline-offset:3px}50%{outline-color:#e8a020;outline-offset:7px}}
+:root[data-intro-hint] .hb-add,
+:root[data-intro-hint] .tab-focus .tbtn.primary,
+:root[data-intro-hint] .tab-focus .timer-modes,
+:root[data-intro-hint] .tab-focus .timer-session-dots,
+:root[data-intro-hint] .tab-focus .task-link-row{outline:0 solid transparent}
+:root[data-intro-hint=plus] .hb-add,
+:root[data-intro-hint=start] .tab-focus .tbtn.primary,
+:root[data-intro-hint=modes] .tab-focus .timer-modes,
+:root[data-intro-hint=dots] .tab-focus .timer-session-dots,
+:root[data-intro-hint=link] .tab-focus .task-link-row{
+  outline:3px solid #ffd66e;outline-offset:3px;border-radius:8px;animation:intro-ping 1.5s ease-out infinite}
+/* a pixel caret over the plus, so "down on the bar" has somewhere to land */
+:root[data-intro-hint=plus] .hb-add::after{content:'';position:absolute;bottom:calc(100% + 12px);left:50%;margin-left:-9px;
+  border:9px solid transparent;border-top:13px solid #ffd66e;filter:drop-shadow(0 2px 0 var(--ink))}
+:root[data-intro-hint=plus] .hb-add{position:relative}
+.task-card.intro-spark{outline:3px solid #ffd66e;outline-offset:4px;animation:intro-ping 1.5s ease-out infinite}
+
+/* tap the dog on the porch to hear it again (phones get the same thing in the account sheet) */
+.dog-spot{--dx:141;--dy:333;--dw:72;--dh:72;position:fixed;z-index:6;padding:0;border:0;background:transparent;cursor:pointer;border-radius:10px;
+  left:calc(var(--scene-l,0px) + var(--dx) * var(--scene-s,1) * 1px);
+  top:calc(var(--scene-t,0px) + var(--dy) * var(--scene-s,1) * 1px);
+  width:calc(var(--dw) * var(--scene-s,1) * 1px);height:calc(var(--dh) * var(--scene-s,1) * 1px)}
+.dog-spot:hover{background:rgba(255,214,110,.16)}
+.dog-spot:focus-visible{outline:3px solid #ffd05c;outline-offset:2px}

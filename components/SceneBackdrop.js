@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useTheme } from '../lib/theme'
-import { createCritters, pxRect, pxEllipse, snap, P } from '../lib/critters'
+import { createCritters, pxRect, pxEllipse, snap, P, DOG_UP } from '../lib/critters'
 import { createPet } from '../lib/pet'
 
 // The illustrated cliffside behind every page (public/scene/*.webp, one layout for day and night),
@@ -50,9 +50,34 @@ function placeScene() {
   r.setProperty('--egg-l', X(308)); r.setProperty('--egg-r', X(442)); r.setProperty('--egg-b', Y(432))
   r.setProperty('--scene-l', Math.round(left) + 'px'); r.setProperty('--scene-t', Math.round(b.top) + 'px'); r.setProperty('--scene-s', String(b.s))
   r.setProperty('--falls-l', X(648)); r.setProperty('--falls-r', X(838)); r.setProperty('--gaz-l', X(1120))
+  window.dispatchEvent(new Event('db-place'))
 }
 // p = page position as a float (0 = Tasks … 3 = Stats), or null to go back to the fixed layout
 export function setScenePan(p) { pan = p; placeScene() }
+
+// Where the art is on screen right now, pan included — the same sum placeScene does.
+export function sceneOrigin() {
+  const vw = window.innerWidth, vh = window.innerHeight, b = sceneBox(vw, vh)
+  const left = pan === null ? b.left : Math.min(0, Math.max(vw - b.width, vw / 2 - panX(pan) * b.s))
+  return { left, top: b.top, s: b.s, vw, vh }
+}
+// The dog's box on screen, and how much of his width the viewport actually shows. The intro uses
+// this to decide whether the narrator can speak from the porch or has to take the bottom strip:
+// the scene is cropped to cover, so on a tall window the left of the cliff walks off the edge.
+export function dogScreenBox() {
+  const { left, top, s, vw, vh } = sceneOrigin()
+  const x = left + DOG_UP.x * s, y = top + DOG_UP.y * s, w = DOG_UP.w * s, h = DOG_UP.h * s
+  const shown = Math.max(0, Math.min(x + w, vw) - Math.max(x, 0))
+  return { x, y, w, h, s, vw, vh, seen: w ? shown / w : 0 }
+}
+
+// A ring of grid cells drawn as additive light, the way the night lanterns already glow. The intro
+// uses it to point at the egg without dimming anything. { cx, cy, rx, ry } in art pixels, or null.
+let highlight = null
+export function setSceneHighlight(h) {
+  highlight = h
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('db-scene'))
+}
 
 // cheap deterministic noise for per-frame sparkle
 function hash(a, b, c) { let h = (a * 374761393 + b * 668265263 + c * 1274126177) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296 }
@@ -103,7 +128,7 @@ export default function SceneBackdrop() {
       const dark = themeRef.current === 'dark'
       ctx.clearRect(0, 0, SCENE.w, SCENE.h)
       const img = dark ? nightImg.current : dayImg.current
-      if (reduced) { critters.draw(ctx, 0, dark, img, true); pet.draw(ctx, 0, dark, img, true); return }
+      if (reduced) { critters.draw(ctx, 0, dark, img, true); pet.draw(ctx, 0, dark, img, true); drawHighlight(0, true); return }
 
       // falling water: soft light streaks sliding down each fall
       for (const st of streaks) {
@@ -133,6 +158,7 @@ export default function SceneBackdrop() {
 
       // the egg (or the bird it became)
       pet.draw(ctx, f, dark, img, false)
+      drawHighlight(f, false)
 
       if (dark) {
         // windows breathe, lanterns glow, stars twinkle, fireflies drift
@@ -158,6 +184,18 @@ export default function SceneBackdrop() {
             ctx.fillStyle = 'rgba(250,236,140,0.95)'; pxRect(ctx, x, y)
           }
         }
+      }
+    }
+
+    // the intro's pointer at the egg: a ring of cells that brightens round the ellipse, no overlay
+    function drawHighlight(f, still) {
+      if (!highlight) return
+      const { cx, cy, rx, ry } = highlight, n = 28
+      for (let i = 0; i < n; i++) {
+        const t = i / n, a = t * Math.PI * 2
+        const lead = still ? 1 : 0.35 + 0.65 * Math.max(0, Math.cos((t - (f % 36) / 36) * Math.PI * 2))
+        ctx.fillStyle = `rgba(255,214,110,${0.85 * lead})`
+        pxRect(ctx, cx + Math.cos(a) * rx, cy + Math.sin(a) * ry)
       }
     }
 
