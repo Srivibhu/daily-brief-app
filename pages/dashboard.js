@@ -9,10 +9,8 @@ import AddTaskSheet from '../components/AddTaskSheet'
 import PixelIcon from '../components/PixelIcon'
 import TagModal from '../components/TagModal'
 import AccountModal from '../components/AccountModal'
-import PetCard, { PetPortrait } from '../components/PetCard'
-import ShopSheet from '../components/ShopSheet'
-import Wallet from '../components/Wallet'
-import { PetHud, FocusHud } from '../components/Hud'
+import PetPanel, { PetPortrait } from '../components/PetCard'
+import { FocusHud } from '../components/Hud'
 import { computePet, setPetState, petReact, MOODS } from '../lib/pet'
 import { useTheme, setTheme } from '../lib/theme'
 import { setScenePan } from '../components/SceneBackdrop'
@@ -59,7 +57,6 @@ export default function Dashboard() {
   const [showPet, setShowPet] = useState(false)     // false | true | 'hatched'
   const [petPreview, setPetPreview] = useState(null)
   const [petData, setPetData] = useState(null)    // /api/pet: name, skin, owned, balances, all-time totals
-  const [showShop, setShowShop] = useState(false)
   const pending = useRef({})
   const pager = useRef(null)
   const phone = usePhone()
@@ -286,8 +283,7 @@ export default function Dashboard() {
 
   const hello = (
     <section className="hello">
-      <div className="dateline">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
-        {phone && petData && <button type="button" className="chip wallet-chip" onClick={() => setShowShop(true)} aria-label="Open the shop"><Wallet lilies={petData.lilies} pearls={petData.pearls} /></button>}</div>
+      <div className="dateline">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
       <h1>{h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}{name && `, ${name}`}</h1>
       <p className="summary">
         {nDueToday ? <><b>{plural(nDueToday, 'task')}</b> due today</> : 'Nothing due today'}
@@ -382,8 +378,8 @@ export default function Dashboard() {
       ) : (
         <>
           {hello}
-          {wide && <PetHud pet={pet} name={petName} skin={skin} lilies={petData?.lilies || 0} pearls={petData?.pearls || 0}
-            onOpen={() => setShowPet(true)} onShop={() => setShowShop(true)} />}
+          {wide && <button type="button" className={`pet-spot stage-${pet.stage.key}`} onClick={() => setShowPet(true)}
+            aria-label={`${(pet.idx >= 2 && petName) || pet.stage.name}: open the pet panel`} title={(pet.idx >= 2 && petName) || pet.stage.name} />}
           {wide && tab !== 'focus' && <FocusHud timer={timer} todayMins={todayMins} onOpen={() => setTab('focus')} />}
           <main className="board">{view(tab)}</main>
         </>
@@ -411,7 +407,7 @@ export default function Dashboard() {
           <button className="hb-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={`Switch to ${theme === 'dark' ? 'day' : 'night'}`} title={theme === 'dark' ? 'Day' : 'Night'}>
             <span className="hb-icon"><PixelIcon name={theme === 'dark' ? 'sun' : 'moon'} /></span><span className="hb-label">{theme === 'dark' ? 'Day' : 'Night'}</span>
           </button>
-          <button className="hb-btn" onClick={() => setShowShop(true)} title="Shop"><span className="hb-icon"><PixelIcon name="bag" /></span><span className="hb-label">Shop</span></button>
+          <button className="hb-btn" onClick={() => setShowPet('shop')} title="Shop"><span className="hb-icon"><PixelIcon name="bag" /></span><span className="hb-label">Shop</span></button>
           <button className="hb-btn" onClick={() => setShowTags(true)} title="Tags"><span className="hb-icon"><PixelIcon name="tag" /></span><span className="hb-label">Tags</span></button>
           <button className="hb-btn" onClick={() => setShowAccount(true)} title="Account"><span className="hb-icon"><PixelIcon name="person" /></span><span className="hb-label">Me</span></button>
         </div>
@@ -422,9 +418,8 @@ export default function Dashboard() {
         onProgress={setProgress} onUpdate={updateTask} onDelete={deleteTask} />}
       {showAccount && <AccountModal user={user} onSaved={u => setUser(x => ({ ...x, ...u }))} onClose={() => setShowAccount(false)}
         onExport={exportData} onSignOut={logout} />}
-      {showPet && <PetCard pet={pet} name={petName} skin={skin} onName={namePet} hatched={showPet === 'hatched'} preview={petPreview}
-        onShop={() => { setShowPet(false); setShowShop(true) }} onPreview={setPetPreview} onClose={() => setShowPet(false)} />}
-      {showShop && <ShopSheet pet={pet} petData={petData} onBuy={buySkin} onWear={wearSkin} onClose={() => setShowShop(false)} />}
+      {showPet && <PetPanel pet={pet} petData={petData} name={petName} skin={skin} onName={namePet} onBuy={buySkin} onWear={wearSkin}
+        hatched={showPet === 'hatched'} initialTab={showPet === 'shop' ? 'shop' : 'bird'} preview={petPreview} onPreview={setPetPreview} onClose={() => setShowPet(false)} />}
       {showTags && <TagModal tags={tags} setTags={setTags} onClose={() => setShowTags(false)} />}
     </div>
   )

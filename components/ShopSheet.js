@@ -1,17 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { SKINS, LILIES_PER_HOUR, TASKS_PER_PEARL } from '../lib/shop'
 import { PetPortrait } from './PetCard'
-import Wallet, { LilyIcon, PearlIcon } from './Wallet'
+import { LilyIcon, PearlIcon } from './Wallet'
 
 // The shop: spend water lilies (focus time) and pearls (finished tasks) on colours for the bird.
-export default function ShopSheet({ pet, petData, onBuy, onWear, onClose }) {
+// Lives as a tab of the pet panel.
+export default function ShopBody({ pet, petData, onBuy, onWear }) {
   const [busy, setBusy] = useState(null)
   const [msg, setMsg] = useState(null)
-  useEffect(() => {
-    const onKey = e => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
 
   const d = petData || { lilies: 0, pearls: 0, owned: ['bluebird'], skin: 'bluebird', totalMinutes: 0, tasksDone: 0 }
   // show the bird as it looks now; before it hatches, show the grown-up colours so you know what you're buying
@@ -28,14 +24,8 @@ export default function ShopSheet({ pet, petData, onBuy, onWear, onClose }) {
   }
 
   return (
-    <div className="modal-back" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="modal shop-sheet" role="dialog" aria-modal="true" aria-label="Shop">
-        <div className="detail-head">
-          <h2>Shop</h2>
-          <button type="button" className="icon-btn modal-close" onClick={onClose} aria-label="Close">×</button>
-        </div>
+      <div className="shop-body">
         <div className="shop-wallet">
-          <Wallet lilies={d.lilies} pearls={d.pearls} className="big" />
           <p><b>{LILIES_PER_HOUR} lilies</b> for every hour of focus (next in {minsToLily} min). <b>1 bag of pearls</b> for every {TASKS_PER_PEARL} tasks you finish (next in {tasksToPearl}).</p>
         </div>
         {msg && <p className={`acct-msg${msg.ok ? ' ok' : ''}`} role="status">{msg.text}</p>}
@@ -61,6 +51,5 @@ export default function ShopSheet({ pet, petData, onBuy, onWear, onClose }) {
           })}
         </ul>
       </div>
-    </div>
   )
 }
