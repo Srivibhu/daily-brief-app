@@ -37,25 +37,28 @@ export default function AnalyticsTab({ tasks, sessions, activity = {} }) {
     ['Total focus (90d)', fmtMins(total), 'var(--green)'], ['Focus days', days], ['Avg focus / day', days ? fmtMins(Math.round(total / days)) : '—'], ['All tasks', tasks.length],
   ]
   return (
-    <div>
+    <div className="stats-view">
       <dl className="figures">
         {stats.map(([l, v, c]) => <div className="figure" key={l}><dd style={{ color: c || 'var(--text)' }}>{v}</dd><dt>{l}</dt></div>)}
       </dl>
-      <div className="field-label" style={{ marginTop: 4 }}>Last 4 weeks · {cells.filter(c => c.c > 0).length} active days</div>
+      <div className="art-label">Last 4 weeks · {cells.filter(c => c.c > 0).length} active days</div>
       <div className="activity-grid wide">{cells.map(c => <div key={c.k} className={`act-cell act-${c.l}`} title={`${c.k}: ${c.c}`} />)}</div>
-      <div className="field-label">Weekly tasks — scheduled vs completed</div>
+      <section className="panel">
+      <div className="panel-label">Weekly tasks <span className="legend"><i style={{ background: 'var(--wood)' }} />scheduled <i style={{ background: 'var(--leaf)' }} />completed</span></div>
       {!weeks.length && <div className="empty">No task history yet</div>}
       {[...weeks].reverse().map(w => (
         <div className="bar-row" key={w.key}>
           <div style={{ width: 62, textAlign: 'right' }}>W{w.week} '{String(w.year).slice(2)}</div>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <div className="bar-track"><div className="bar-fill" style={{ width: (w.scheduled / max * 100) + '%', background: 'var(--s4)' }} /></div>
-            <div className="bar-track"><div className="bar-fill" style={{ width: (w.completed / max * 100) + '%', background: 'var(--blue)' }} /></div>
+            <div className="bar-track"><div className="bar-fill" style={{ width: (w.scheduled / max * 100) + '%', background: 'var(--wood)' }} /></div>
+            <div className="bar-track"><div className="bar-fill" style={{ width: (w.completed / max * 100) + '%', background: 'var(--leaf)' }} /></div>
           </div>
           <div style={{ width: 44 }}>{w.completed}/{w.scheduled}</div>
         </div>
       ))}
-      <div className="field-label">Recently completed</div>
+      </section>
+      <section className="panel">
+      <div className="panel-label">Recently completed</div>
       {!recent.length && <div className="empty">No completed tasks yet</div>}
       {recent.map(t => (
         <div className="cal-task-row" key={t.id}>
@@ -64,6 +67,7 @@ export default function AnalyticsTab({ tasks, sessions, activity = {} }) {
           <span style={{ fontFamily: 'var(--sans)', fontSize: 10, color: 'var(--sub)' }}>{t.completed_at}</span>
         </div>
       ))}
+      </section>
     </div>
   )
 }

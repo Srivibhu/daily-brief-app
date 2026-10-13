@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useTheme } from '../lib/theme'
+import { createCritters } from '../lib/critters'
 
 // The illustrated cliffside behind every page (public/scene/*.webp, one layout for day and night),
 // plus a small canvas layer, drawn at the art's own pixel size, that animates only the live parts.
@@ -68,12 +69,14 @@ export default function SceneBackdrop() {
     const flies = Array.from({ length: 16 }, (_, i) => ({ x: R() < 0.5 ? 20 + R() * 420 : 960 + R() * 400, y: 420 + R() * 330, ph: R() * 100, sp: 0.4 + R() * 0.6 }))
     const stars = Array.from({ length: 26 }, () => ({ x: SCENE.sky.x0 + R() * (SCENE.sky.x1 - SCENE.sky.x0), y: 8 + R() * (SCENE.sky.y1 - 30), ph: Math.floor(R() * 60) }))
     const winPh = SCENE.windows.map(() => R() * 50)
+    const critters = createCritters()
     let f = 0, raf = 0, last = 0, alive = true
 
     function draw() {
       const dark = themeRef.current === 'dark'
       ctx.clearRect(0, 0, SCENE.w, SCENE.h)
-      if (reduced) return
+      const img = dark ? nightImg.current : dayImg.current
+      if (reduced) { critters.draw(ctx, 0, dark, img, true); return }
 
       // falling water: soft light streaks sliding down each fall
       for (const st of streaks) {
@@ -99,8 +102,10 @@ export default function SceneBackdrop() {
         ctx.beginPath(); ctx.ellipse(SCENE.pool.cx, SCENE.pool.cy + 6, 100 + t * 170, 10 + t * 26, 0, 0, Math.PI * 2); ctx.stroke()
       }
 
+      // dog, frogs, rabbits, birds
+      critters.draw(ctx, f, dark, img, false)
+
       // the egg: a little wobble every ~5 s
-      const img = dark ? nightImg.current : dayImg.current
       const w = f % 60
       if (img && img.complete && w < 8) {
         const e = SCENE.egg, ang = Math.sin(w / 8 * Math.PI * 3) * 0.09 * (1 - w / 8)
@@ -145,6 +150,7 @@ export default function SceneBackdrop() {
     draw()
     if (!reduced) raf = requestAnimationFrame(loop)
     const onTheme = () => draw()
+    dayImg.current?.addEventListener('load', onTheme); nightImg.current?.addEventListener('load', onTheme)
     window.addEventListener('db-theme', onTheme)
     return () => { alive = false; cancelAnimationFrame(raf); window.removeEventListener('db-theme', onTheme) }
   }, [])

@@ -44,51 +44,56 @@ export default function FocusTab({ timer, tasks, sessions, focusTaskId, setFocus
           </div>
         </div>
         <div className="timer-controls">
-          <button className="tbtn" onClick={timer.reset} title="Reset">↺</button>
+          <button className="tbtn" onClick={timer.reset} title="Reset" aria-label="Reset">↺</button>
           <button className={`tbtn primary${timer.running ? ' running' : ''}`} onClick={timer.toggle}>
             {timer.running ? 'Pause' : timer.secs < timer.total ? 'Resume' : 'Start'}
           </button>
-          <button className="tbtn" onClick={timer.skip} title="Skip">⏭</button>
+          <button className="tbtn" onClick={timer.skip} title="Skip" aria-label="Skip">⏭</button>
         </div>
-        <div className="task-link-row">
+        <label className="task-link-row chip">
           <select value={focusTaskId || ''} onChange={e => setFocusTaskId(e.target.value || null)}>
-            <option value="">— Link to a task —</option>
+            <option value="">Link to a task…</option>
             {tasks.filter(t => t.progress < 100).map(t => <option key={t.id} value={t.id}>{t.name.slice(0, 40)}</option>)}
           </select>
-        </div>
+        </label>
       </div>
 
-      <div>
-        <div className="field-label" style={{ marginTop: 0 }}>Today's Focus</div>
-        <div className="today-focus">
-          <div className="focus-steps"><div className="big-mins">{mins}</div><div className="unit">min</div></div>
-          <div className="focus-subtext">{full} session{full !== 1 ? 's' : ''} completed today</div>
-          <div className="focus-bar-track"><div className="focus-bar-fill" style={{ width: Math.min(100, Math.round(mins / GOAL * 100)) + '%' }} /></div>
-          <div className="focus-subtext">Goal: {GOAL} min / day</div>
-        </div>
-        <div className="field-label">This Week</div>
-        <div className="week-chart-wrap"><WeekBars labels={labels} data={data} /></div>
-        <div className="field-label">Today's Sessions</div>
-        <div className="session-log">
-          {!today.length && <div className="empty" style={{ padding: '8px 0', fontSize: 12 }}>No sessions yet — start the timer!</div>}
-          {[...today].reverse().map(s => (
-            <div className="slog-item" key={s.id}>
-              <div className="slog-dot" style={s.completed ? undefined : { background: 'var(--dim)' }} />
-              <div className="slog-text">
-                {s.task_name && <><span style={{ color: 'var(--text)' }}>{s.task_name}</span> · </>}
-                {s.manual ? 'Manual entry' : s.completed ? 'Full session' : 'Partial'}
+      <div className="panel-col">
+        <section className="panel">
+          <div className="panel-label">Today's focus</div>
+          <div className="today-focus">
+            <div className="focus-steps"><div className="big-mins">{mins}</div><div className="unit">min</div></div>
+            <div className="focus-bar-track"><div className="focus-bar-fill" style={{ width: Math.min(100, Math.round(mins / GOAL * 100)) + '%' }} /></div>
+            <div className="focus-subtext">{full} session{full !== 1 ? 's' : ''} done · goal {GOAL} min a day</div>
+          </div>
+        </section>
+        <section className="panel">
+          <div className="panel-label">This week</div>
+          <div className="week-chart-wrap"><WeekBars labels={labels} data={data} /></div>
+        </section>
+        <section className="panel">
+          <div className="panel-label">Today's sessions</div>
+          <div className="session-log">
+            {!today.length && <div className="empty" style={{ padding: '8px 0', fontSize: 13 }}>No sessions yet. Start the timer!</div>}
+            {[...today].reverse().map(s => (
+              <div className="slog-item" key={s.id}>
+                <div className="slog-dot" style={s.completed ? undefined : { background: 'var(--dim)' }} />
+                <div className="slog-text">
+                  {s.task_name && <><span style={{ color: 'var(--text)' }}>{s.task_name}</span> · </>}
+                  {s.manual ? 'Manual entry' : s.completed ? 'Full session' : 'Partial'}
+                </div>
+                <div className="slog-dur">{s.time_of_day ? s.time_of_day + ' · ' : ''}{s.minutes}m</div>
+                <button className="slog-del" title="Remove" onClick={() => onDeleteSession(s.id)}>×</button>
               </div>
-              <div className="slog-dur">{s.time_of_day ? s.time_of_day + ' · ' : ''}{s.minutes}m</div>
-              <button className="slog-del" title="Remove" onClick={() => onDeleteSession(s.id)}>×</button>
-            </div>
-          ))}
-        </div>
-        <div className="manual-log-row">
-          <input type="number" className="due-input" min="1" placeholder="Minutes" value={manual}
-            onChange={e => setManual(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') { onManualLog(+manual); setManual('') } }} />
-          <button className="link-btn" onClick={() => { onManualLog(+manual); setManual('') }}>+ Log minutes</button>
-        </div>
+            ))}
+          </div>
+          <div className="manual-log-row">
+            <input type="number" className="due-input" min="1" placeholder="Minutes" value={manual}
+              onChange={e => setManual(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { onManualLog(+manual); setManual('') } }} />
+            <button className="link-btn" onClick={() => { onManualLog(+manual); setManual('') }}>+ Log minutes</button>
+          </div>
+        </section>
       </div>
     </div>
   )

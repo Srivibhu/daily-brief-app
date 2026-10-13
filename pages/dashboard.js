@@ -256,7 +256,7 @@ export default function Dashboard() {
         )}
 
         {tab !== 'tasks' && (
-          <section className="parchment" aria-label={tab === 'analytics' ? 'Stats' : tab[0].toUpperCase() + tab.slice(1)}>
+          <section className={`tabview tab-${tab}`} aria-label={tab === 'analytics' ? 'Stats' : tab[0].toUpperCase() + tab.slice(1)}>
             {tab === 'focus' && (
               <FocusTab timer={timer} tasks={tasks} sessions={sessions} focusTaskId={focusTaskId} setFocusTaskId={setFocusTaskId}
                 onDeleteSession={deleteSession} onManualLog={manualLog} />
