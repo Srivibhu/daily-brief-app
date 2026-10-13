@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { WeekBars } from './charts'
-import PixelTimer from './PixelTimer'
+import PetTimer from './PetTimer'
 import { todayStr, dateStr } from '../lib/util'
 
 const LABEL = { focus: 'Focus', short: 'Short Break', long: 'Long Break' }
@@ -17,7 +17,7 @@ export function weekData(sessions) {
   return { labels, data }
 }
 
-export default function FocusTab({ timer, tasks, sessions, focusTaskId, setFocusTaskId, onDeleteSession, onManualLog }) {
+export default function FocusTab({ timer, tasks, sessions, focusTaskId, setFocusTaskId, onDeleteSession, onManualLog, petStage = 'egg', skin = 'bluebird' }) {
   const [manual, setManual] = useState('')
   const today = sessions.filter(s => s.date === todayStr())
   const mins = today.reduce((a, s) => a + s.minutes, 0)
@@ -36,7 +36,7 @@ export default function FocusTab({ timer, tasks, sessions, focusTaskId, setFocus
           ))}
         </div>
         <div className={`timer-stage${timer.running ? ' running' : ''}`}>
-          <PixelTimer mode={timer.mode} running={timer.running} secs={timer.secs} total={timer.total} count={timer.count} />
+          <PetTimer stage={petStage} skin={skin} mode={timer.mode} running={timer.running} secs={timer.secs} total={timer.total} count={timer.count} />
           <div className="timer-display">{String(Math.floor(timer.secs / 60)).padStart(2, '0')}:{String(timer.secs % 60).padStart(2, '0')}</div>
           <div className="timer-mode-label">{LABEL[timer.mode]}</div>
           <div className="timer-session-dots">

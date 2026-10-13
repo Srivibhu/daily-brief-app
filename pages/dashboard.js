@@ -10,9 +10,10 @@ import PixelIcon from '../components/PixelIcon'
 import TagModal from '../components/TagModal'
 import AccountModal from '../components/AccountModal'
 import PetCard, { PetPortrait } from '../components/PetCard'
+import ShopSheet from '../components/ShopSheet'
+import Wallet from '../components/Wallet'
 import { computePet, setPetState, petReact, MOODS } from '../lib/pet'
 import { useTheme, setTheme } from '../lib/theme'
-import { PixelTomato } from '../components/PixelTimer'
 import { setScenePan } from '../components/SceneBackdrop'
 import { useTimer } from '../lib/useTimer'
 import { useReminders } from '../lib/useReminders'
@@ -53,7 +54,8 @@ export default function Dashboard() {
   const [adding, setAdding] = useState(false)
   const [showPet, setShowPet] = useState(false)     // false | true | 'hatched'
   const [petPreview, setPetPreview] = useState(null)
-  const [petName, setPetName] = useState('')
+  const [petData, setPetData] = useState(null)    // /api/pet: name, skin, owned, balances, all-time totals
+  const [showShop, setShowShop] = useState(false)
   const pending = useRef({})
   const pager = useRef(null)
   const phone = usePhone()
@@ -67,6 +69,7 @@ export default function Dashboard() {
   }, []) // eslint-disable-line
 
   async function loadData() {
+    refreshPet()
     const [t, tg, f, a] = await Promise.all([api('/api/tasks'), api('/api/tags'), api('/api/focus'), api('/api/activity')])
     if (Array.isArray(t)) setTasks(t)
     if (Array.isArray(tg)) setTags(tg)
@@ -122,14 +125,40 @@ export default function Dashboard() {
   }
 
   // ── The pet: grows with focus time, mood from the last 3 days ─────────────────
-  const pet = computePet({ sessions, tasks }, petPreview)
-  useEffect(() => { try { setPetName(localStorage.getItem('db-pet-name') || '') } catch {} }, [])
-  useEffect(() => { setPetState({ stage: pet.stage.key, mood: pet.mood }) }, [pet.stage.key, pet.mood])
+  const pet = computePet({ sessions, tasks, totals: petData }, petPreview)
+  const petName = petData?.name || ''
+  const skin = petData?.skin || 'bluebird'
+  async function refreshPet() {
+    const d = await api('/api/pet').catch(() => null)
+    if (d && !d.error) {
+      setPetData(d)
+      // carry over a name given before the pets table existed
+      try { const old = localStorage.getItem('db-pet-name'); if (old && !d.name) { namePet(old) } localStorage.removeItem('db-pet-name') } catch {}
+    }
+  }
+  const petTimer = useRef(null)
+  const refreshPetSoon = () => { clearTimeout(petTimer.current); petTimer.current = setTimeout(refreshPet, 1200) }
+  useEffect(() => { setPetState({ stage: pet.stage.key, mood: pet.mood, skin }) }, [pet.stage.key, pet.mood, skin])
   useEffect(() => {
     if (authLoading || !tasks.length || pet.real < 2) return
     try { if (!localStorage.getItem('db-pet-hatched')) { localStorage.setItem('db-pet-hatched', '1'); setShowPet('hatched') } } catch {}
   }, [pet.real, authLoading, tasks.length])
-  function namePet(n) { setPetName(n); try { localStorage.setItem('db-pet-name', n) } catch {} }
+  async function namePet(n) {
+    setPetData(d => d && { ...d, name: n })
+    const d = await api('/api/pet', { method: 'PATCH', body: { name: n } })
+    if (d && !d.error) setPetData(d)
+  }
+  async function buySkin(id) {
+    const d = await api('/api/pet', { method: 'POST', body: { buy: id } })
+    if (d && !d.error) { setPetData(d); petReact('focus') }
+    return d
+  }
+  async function wearSkin(id) {
+    setPetData(d => d && { ...d, skin: id })
+    const d = await api('/api/pet', { method: 'PATCH', body: { skin: id } })
+    if (d && !d.error) setPetData(d)
+    return d
+  }
 
   // ── Activity ─────────────────────────────────────────────────────────────────
   function recordActivity() {
@@ -159,6 +188,7 @@ export default function Dashboard() {
     updateTask(id, { progress: v, history })
     recordActivity()
     if (v === 100 && t.progress < 100) petReact('task')
+    if ((v === 100) !== (t.progress === 100)) refreshPetSoon()
   }
 
   async function addTask(q) {
@@ -180,6 +210,7 @@ export default function Dashboard() {
     const data = await api('/api/focus', { method: 'POST', body })
     if (data?.id) { setSessions(ss => [data, ...ss]); recordActivity() }
     if (completed) petReact('focus')
+    refreshPetSoon()
   }
   const timer = useTimer((m, c) => recordFocus(m, c))
   const manualLog = mins => { if (mins >= 1) recordFocus(mins, false, true) }
@@ -243,7 +274,7 @@ export default function Dashboard() {
   const attention = nOverdue + nDueToday
   const HOTBAR = [
     ['tasks', 'Tasks', <PixelIcon name="quest" />, attention],
-    ['focus', 'Focus', <PixelTomato animate={timer.running} />],
+    ['focus', 'Focus', <PetPortrait stage={pet.stage.key} mood="content" skin={skin} scale={2} pose={timer.running ? 'Flap' : ''} className="hb-pet-mini" />],
     ['calendar', 'Calendar', <PixelIcon name="calendar" />],
     ['analytics', 'Stats', <PixelIcon name="stats" />],
   ]
@@ -313,7 +344,7 @@ export default function Dashboard() {
       {phone && k !== 'calendar' && <h2 className="board-title page-title">{TITLES[k]}</h2>}
       {k === 'focus' && (
         <FocusTab timer={timer} tasks={tasks} sessions={sessions} focusTaskId={focusTaskId} setFocusTaskId={setFocusTaskId}
-          onDeleteSession={deleteSession} onManualLog={manualLog} />
+          onDeleteSession={deleteSession} onManualLog={manualLog} petStage={pet.stage.key} skin={skin} />
       )}
       {k === 'calendar' && <CalendarTab tasks={tasks} tags={tags} />}
       {k === 'analytics' && <AnalyticsTab tasks={tasks} sessions={sessions} activity={activity} />}
@@ -343,7 +374,7 @@ export default function Dashboard() {
       <nav className="hotbar" aria-label="Main">
         <button className={`hb-pet mood-${pet.mood}`} onClick={() => setShowPet(true)}
           aria-label={`${(pet.idx >= 2 && petName) || pet.stage.name}, ${MOODS[pet.mood].name.toLowerCase()}`} title={`${(pet.idx >= 2 && petName) || pet.stage.name} · ${MOODS[pet.mood].name}`}>
-          <PetPortrait stage={pet.stage.key} mood={pet.mood} scale={2} />
+          <PetPortrait stage={pet.stage.key} mood={pet.mood} scale={2} skin={skin} />
           <span className="hb-mood" aria-hidden="true">{[0, 1, 2].map(i => <i key={i} className={i < { happy: 3, content: 2, sleepy: 1 }[pet.mood] ? 'on' : ''} />)}</span>
         </button>
         <button className="hb-add" onClick={() => setAdding(true)} aria-label="Add task (N)" title="Add task (N)">
@@ -361,6 +392,7 @@ export default function Dashboard() {
           <button className="hb-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={`Switch to ${theme === 'dark' ? 'day' : 'night'}`} title={theme === 'dark' ? 'Day' : 'Night'}>
             <span className="hb-icon"><PixelIcon name={theme === 'dark' ? 'sun' : 'moon'} /></span><span className="hb-label">{theme === 'dark' ? 'Day' : 'Night'}</span>
           </button>
+          <button className="hb-btn" onClick={() => setShowShop(true)} title="Shop"><span className="hb-icon"><PixelIcon name="bag" /></span><span className="hb-label">Shop</span></button>
           <button className="hb-btn" onClick={() => setShowTags(true)} title="Tags"><span className="hb-icon"><PixelIcon name="tag" /></span><span className="hb-label">Tags</span></button>
           <button className="hb-btn" onClick={() => setShowAccount(true)} title="Account"><span className="hb-icon"><PixelIcon name="person" /></span><span className="hb-label">Me</span></button>
         </div>
@@ -371,8 +403,9 @@ export default function Dashboard() {
         onProgress={setProgress} onUpdate={updateTask} onDelete={deleteTask} />}
       {showAccount && <AccountModal user={user} onSaved={u => setUser(x => ({ ...x, ...u }))} onClose={() => setShowAccount(false)}
         onExport={exportData} onSignOut={logout} />}
-      {showPet && <PetCard pet={pet} name={petName} onName={namePet} hatched={showPet === 'hatched'} preview={petPreview}
-        onPreview={setPetPreview} onClose={() => setShowPet(false)} />}
+      {showPet && <PetCard pet={pet} name={petName} skin={skin} onName={namePet} hatched={showPet === 'hatched'} preview={petPreview}
+        onShop={() => { setShowPet(false); setShowShop(true) }} onPreview={setPetPreview} onClose={() => setShowPet(false)} />}
+      {showShop && <ShopSheet pet={pet} petData={petData} onBuy={buySkin} onWear={wearSkin} onClose={() => setShowShop(false)} />}
       {showTags && <TagModal tags={tags} setTags={setTags} onClose={() => setShowTags(false)} />}
     </div>
   )
