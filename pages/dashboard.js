@@ -431,7 +431,21 @@ export default function Dashboard() {
         onExport={exportData} onSignOut={logout} />}
       {showPet && <PetPanel pet={pet} petData={petData} name={petName} skin={skin} onName={namePet} onBuy={buySkin} onWear={wearSkin}
         hatched={showPet === 'hatched'} initialTab={showPet === 'shop' ? 'shop' : 'bird'} preview={petPreview} onPreview={setPetPreview} onClose={() => setShowPet(false)} />}
-      {showTags && <TagModal tags={tags} setTags={setTags} onClose={() => setShowTags(false)} />}
+      {showTags && <TagModal tags={tags} setTags={updater => {
+        // Intercept tag updates: when a tag is renamed, also update task tag name strings
+        setTags(prev => {
+          const next = typeof updater === 'function' ? updater(prev) : updater
+          const renamed = {}
+          prev.forEach(old => {
+            const updated = next.find(n => n.id === old.id)
+            if (updated && updated.name !== old.name) renamed[old.name] = updated.name
+          })
+          if (Object.keys(renamed).length > 0) {
+            setTasks(ts => ts.map(t => ({ ...t, tags: (t.tags || []).map(tag => renamed[tag] ?? tag) })))
+          }
+          return next
+        })
+      }} onClose={() => setShowTags(false)} />}
     </div>
   )
 }
