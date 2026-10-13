@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { MiniLine } from './charts'
-import { statusOf, sanitizeHtml, dateStr, PRIORITY_LABELS } from '../lib/util'
+import { statusOf, sanitizeHtml, dateStr, PRIORITY_LABELS, safeHref } from '../lib/util'
 
 // Rich-text notes (contenteditable) — content is initialised once, then owned by the DOM
 function NoteEditor({ html, onSave }) {
@@ -108,7 +108,7 @@ export default function TaskDetail({ task: t, tags, onClose, onProgress, onUpdat
           <dd>
             <input className="field-input grow" type="url" placeholder="https://…" defaultValue={t.link || ''} aria-label="Link"
               onChange={e => onUpdate(t.id, { link: e.target.value }, 700)} />
-            {t.link && <a className="link-btn" href={t.link} target="_blank" rel="noopener noreferrer">Open ↗</a>}
+            {safeHref(t.link) && <a className="link-btn" href={safeHref(t.link)} target="_blank" rel="noopener noreferrer">Open ↗</a>}
           </dd>
         </dl>
 
