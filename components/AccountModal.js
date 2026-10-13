@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../lib/util'
 
 // Change username and/or password. Both need the current password.
-export default function AccountModal({ user, onSaved, onClose }) {
+export default function AccountModal({ user, onSaved, onClose, onExport, onSignOut }) {
   const [username, setUsername] = useState(user?.username || '')
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
@@ -75,6 +75,12 @@ export default function AccountModal({ user, onSaved, onClose }) {
           <button type="button" className="link-btn" onClick={onClose}>Close</button>
           <button type="submit" className="btn" disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button>
         </div>
+        {(onExport || onSignOut) && (
+          <div className="acct-more">
+            {onExport && <button type="button" className="link-btn" onClick={onExport}>Export my data</button>}
+            {onSignOut && <button type="button" className="link-btn danger" onClick={onSignOut}>Sign out</button>}
+          </div>
+        )}
       </form>
     </div>
   )

@@ -71,21 +71,21 @@ body{font-family:var(--serif);background:var(--bg);color:var(--text);min-height:
 /* pixel-art waterfall canvas (components/PixelBackdrop.js) sits behind everything */
 .pixel-backdrop{position:fixed;left:0;top:0;z-index:-1;pointer-events:none;image-rendering:pixelated;image-rendering:crisp-edges}
 
-/* The veil: no colour layer — the scene itself behind the content column, lightly blurred and calmed
-   (light: a touch brighter, dark: a touch dimmer). It feathers back to full-strength pixel art at the sides. */
-:root{--veil-filter:blur(2px) brightness(1.32) saturate(.62) contrast(.86);
-  /* text on the scene: a crisp one-pixel edge, like subtitles — no glow */
-  --ink-edge:0 1px 0 rgba(255,255,248,.7),0 0 1px rgba(255,255,248,.5)}
-:root[data-theme="dark"]{--veil-filter:blur(2px) brightness(.58) saturate(.8);
-  --ink-edge:0 1px 1px rgba(8,6,4,.7),0 0 2px rgba(8,6,4,.45)}
-.shell{text-shadow:var(--ink-edge)}
+/* The illustrated scene (components/SceneBackdrop.js) sits behind everything: no blur, no wash.
+   Text that floats on it gets a hard 1px outline in the opposite tone, the way games letter text over art. */
+.scene{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:var(--bg)}
+.scene-art{position:absolute}
+.scene-img{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none}
+.scene-img.night{opacity:0;transition:opacity .7s ease}
+.scene-img.night.on{opacity:1}
+.scene-fx{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+:root{--pixel:'Pixelify Sans',ui-monospace,monospace;
+  --oc:rgba(250,246,232,.92);
+  --outline:-1px 0 0 var(--oc),1px 0 0 var(--oc),0 -1px 0 var(--oc),0 1px 0 var(--oc),1px 1px 0 var(--oc)}
+:root[data-theme="dark"]{--oc:rgba(8,8,12,.9)}
+.shell{text-shadow:var(--outline)}
 .shell button,.shell input,.shell select{text-shadow:inherit}
-.task-card,.stack-peek,.modal,.btn,.qa-submit,.tbtn.primary,.tag-toggle.selected,.cal-cell.today .cal-day,.act-cell{text-shadow:none}
-.veil{position:fixed;top:0;bottom:0;left:50%;z-index:-1;pointer-events:none;
-  width:calc(min(100vw,1240px) + 320px);transform:translateX(-50%);
-  -webkit-backdrop-filter:var(--veil-filter);backdrop-filter:var(--veil-filter);
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 160px,#000 calc(100% - 160px),transparent 100%);
-  mask-image:linear-gradient(90deg,transparent 0,#000 160px,#000 calc(100% - 160px),transparent 100%)}
+.task-card,.stack-peek,.modal,.btn,.qa-submit,.tbtn.primary,.tag-toggle.selected,.cal-cell.today .cal-day,.act-cell,.chip,.hotbar{text-shadow:none}
 
 /* ══ Shell ══ */
 .shell{max-width:1180px;margin:0 auto}
@@ -409,7 +409,6 @@ input,select{color-scheme:inherit}
 @media(max-width:560px){
   body{padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
   input,select,textarea,.notes-content{font-size:16px!important}
-  .veil{width:100vw;-webkit-mask-image:none;mask-image:none}
   .quiet-actions{gap:14px}
   .hello{margin:34px 0 26px}
   .hello h1{font-size:32px;letter-spacing:-.6px}
@@ -459,3 +458,140 @@ input,select{color-scheme:inherit}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
+
+/* ══════════════════════════════════════════════════════════════
+   Game UI layer: pixel lettering, parchment quest cards, the hotbar
+══════════════════════════════════════════════════════════════ */
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+kbd{font-family:var(--pixel);font-size:.9em;padding:0 5px;border:1px solid currentColor;border-radius:3px}
+:root{
+  --parch:#f6ecd2; --parch-2:#ecdcb4; --ink:#4a3a26; --ink-2:#2f2416; --wood:#8a6440; --leaf:#5f8a3a; --leaf-d:#3f6224;
+}
+:root[data-theme="dark"]{
+  --parch:#2e261d; --parch-2:#3a3025; --ink:#100c08; --ink-2:#000; --wood:#5a4028; --leaf:#6e9a45; --leaf-d:#4b7030;
+}
+
+/* content sits over the calm middle of the art; the hotbar needs room at the bottom */
+.shell{max-width:820px;padding-bottom:120px}
+.hello{margin:30px 0 30px}
+.dateline{font-family:var(--pixel);font-size:14px;font-weight:600;letter-spacing:1.5px}
+.hello h1{font-family:var(--pixel);font-weight:700;font-size:46px;letter-spacing:0;line-height:1.05}
+.summary{font-size:18px;max-width:58ch}
+
+.board{min-width:0}
+.board-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+.board-title{font-family:var(--pixel);font-size:26px;font-weight:700;color:var(--text)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--parch);border:2px solid var(--ink);border-radius:6px;box-shadow:0 3px 0 var(--ink);padding:3px 8px 3px 10px;font-family:var(--pixel);font-size:14px;color:var(--text)}
+.chip-k{color:var(--sub);font-weight:500}
+.chip select{background:transparent;border:0;outline:none;font-family:var(--pixel);font-size:14px;font-weight:600;color:var(--text);cursor:pointer;padding:2px 0}
+.chip select option{background:var(--parch);color:var(--text)}
+.chip:focus-within{outline:2px solid var(--leaf);outline-offset:2px}
+
+/* stacks: pixel lettering for the category names */
+.stack-head h3{font-family:var(--pixel);font-size:22px;font-weight:700;letter-spacing:0}
+.stack-count,.stack-avg{font-family:var(--pixel);font-size:14px;font-weight:600}
+.stack-dot{width:10px;height:10px;border-radius:2px}
+.stack-toggle{font-family:var(--pixel);font-size:14px}
+.stack-arrow{border:2px solid var(--ink);border-radius:5px;background:var(--parch);color:var(--text);box-shadow:0 2px 0 var(--ink);text-shadow:none}
+
+/* quest cards: parchment with an ink border and a hard pixel drop shadow */
+.stack{--card-bg:color-mix(in srgb,var(--parch) 90%,var(--cat));--card-line:var(--ink)}
+.task-card{background:var(--card-bg,var(--parch));border:2px solid var(--ink);border-radius:8px;box-shadow:0 4px 0 var(--ink);padding:14px 16px 14px}
+:root[data-theme="dark"] .task-card{box-shadow:0 4px 0 var(--ink)}
+.task-card:hover{transform:translateY(-2px);border-color:var(--ink);box-shadow:0 6px 0 var(--ink)}
+.stack-peek{border:2px solid var(--ink);border-radius:8px;background:var(--parch-2);box-shadow:0 4px 0 var(--ink)}
+.card-due{font-family:var(--pixel);font-size:14px;font-weight:600}
+.card-title{font-size:17px}
+.card-prog-pct{font-family:var(--pixel);font-size:14px}
+.card-check{border:2px solid var(--ink);border-radius:5px}
+.card-check.done{background:var(--leaf);border-color:var(--ink)}
+.card-check.inprog::after{border-radius:2px}
+/* pixel progress bar: ink frame, chunky segments */
+.card-prog-track{height:10px;border:2px solid var(--ink);border-radius:3px;background:var(--parch-2);padding:1px}
+.card-prog-fill{border-radius:1px;background:repeating-linear-gradient(90deg,var(--cat,var(--leaf)) 0 7px,transparent 7px 9px)}
+
+/* done list + misc on the art */
+.done-section{border-top:2px dashed color-mix(in srgb,var(--text) 35%,transparent)}
+.done-toggle{font-family:var(--pixel);font-size:16px;color:var(--text)}
+.field-label{font-family:var(--pixel);font-size:15px}
+.empty{font-size:15px;color:var(--text)}
+
+/* ── the hotbar ── */
+.hotbar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:50;display:flex;align-items:stretch;gap:6px;
+  padding:6px;background:var(--parch);border:3px solid var(--ink);border-radius:10px;box-shadow:0 5px 0 var(--ink),0 10px 24px rgba(0,0,0,.25);
+  font-family:var(--pixel)}
+.hb-group{display:flex;gap:2px}
+.hb-group+.hb-group{padding-left:6px;margin-left:2px;border-left:2px solid color-mix(in srgb,var(--ink) 30%,transparent)}
+.hb-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:60px;padding:6px 8px 5px;border:0;border-radius:6px;background:transparent;color:var(--text);cursor:pointer;font-family:var(--pixel);transition:background .15s}
+.hb-btn:hover{background:var(--parch-2)}
+.hb-btn.on{background:var(--parch-2);box-shadow:inset 0 2px 0 color-mix(in srgb,var(--ink) 35%,transparent)}
+.hb-btn.on .hb-label{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+.hb-icon{position:relative;display:flex;align-items:center;justify-content:center;height:20px}
+.hb-icon .pixel-tomato{width:20px;height:20px}
+.hb-label{font-size:13px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.hb-small .hb-btn{min-width:48px}
+.hb-badge{position:absolute;top:-7px;right:-12px;min-width:17px;height:17px;padding:0 4px;border-radius:4px;background:var(--red);color:#fff;border:2px solid var(--ink);font-size:11px;font-weight:700;line-height:13px;text-align:center}
+.hb-add{display:flex;align-items:center;justify-content:center;width:52px;border:2px solid var(--ink);border-radius:7px;background:var(--leaf);color:#fff;cursor:pointer;box-shadow:inset 0 -3px 0 var(--leaf-d)}
+.hb-add:hover{filter:brightness(1.08)}
+.hb-add:active{box-shadow:inset 0 2px 0 var(--leaf-d)}
+.pixel-icon{display:block}
+
+/* sheets */
+.modal{border:3px solid var(--ink);box-shadow:0 6px 0 var(--ink),var(--shadow-modal);background:var(--parch)}
+.modal h2,.detail-head h2{font-family:var(--pixel);font-weight:700}
+.btn{font-family:var(--pixel);font-size:14px;border:2px solid var(--ink);box-shadow:inset 0 -3px 0 rgba(0,0,0,.18);background:var(--leaf);color:#fff}
+.btn:hover{background:var(--leaf);filter:brightness(1.08)}
+.quest-sheet{width:460px}
+.quest-name{width:100%;font-family:var(--serif);font-size:20px;color:var(--text);background:transparent;border:0;border-bottom:2px solid var(--ink);padding:8px 2px;outline:none;margin-bottom:16px}
+.quest-name::placeholder{color:var(--sub)}
+.quest-cats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.quest-when{display:flex;gap:18px;margin-bottom:6px}
+.quest-when label{display:flex;flex-direction:column;gap:4px;font-family:var(--pixel);font-size:13px;color:var(--sub)}
+.acct-more{display:flex;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:2px dashed color-mix(in srgb,var(--ink) 30%,transparent)}
+.activity-grid.wide{grid-template-columns:repeat(14,24px);gap:5px;margin-bottom:8px}
+.activity-grid.wide .act-cell{border:1px solid color-mix(in srgb,var(--ink) 40%,transparent)}
+
+/* calendar/focus/stats sit on the art too: give their numbers pixel lettering */
+.cal-title,.timer-display,.today-focus .focus-steps .big-mins,.figure dd{font-family:var(--pixel)}
+.timer-display{letter-spacing:2px}
+.tmode{font-family:var(--pixel);font-size:15px}
+
+@media(max-width:560px){
+  .shell{padding-bottom:110px}
+  .hello h1{font-size:32px}
+  .board-title{font-size:22px}
+  .hotbar{left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));transform:none;justify-content:space-between;gap:4px;padding:5px}
+  .hb-btn{min-width:0;padding:6px 4px;flex:1}
+  .hb-small .hb-btn{min-width:0}
+  .hb-small .hb-label{display:none}
+  .hb-group{flex:1}
+  .hb-group.hb-small{flex:0 0 auto}
+  .hb-add{width:46px}
+  .hb-label{font-size:12px}
+  .quest-when{flex-direction:column}
+  .activity-grid.wide{grid-template-columns:repeat(7,1fr)}
+}
+
+/* Focus, Calendar and Stats: one parchment board each (dense small text can't float on the art) */
+.parchment{background:var(--parch);border:3px solid var(--ink);border-radius:10px;box-shadow:0 5px 0 var(--ink);padding:24px 26px;text-shadow:none;animation:rise .4s cubic-bezier(.2,.7,.2,1) both}
+.parchment .focus-layout{gap:40px}
+.parchment .cal-grid,.parchment .cal-dow,.parchment .cal-cell{border-color:color-mix(in srgb,var(--ink) 25%,transparent)}
+.parchment .figure{border-top-color:color-mix(in srgb,var(--ink) 30%,transparent)}
+@media(max-width:560px){.parchment{padding:16px 14px}}
+
+/* small controls that sit on the art get the parchment chip treatment */
+.stack-toggle,.done-toggle{background:var(--parch);border:2px solid var(--ink);border-radius:6px;box-shadow:0 3px 0 var(--ink);padding:4px 10px 4px 6px;color:var(--text);text-shadow:none}
+.stack-toggle .stack-arrow{box-shadow:none;border-width:0;width:18px;height:18px;background:transparent}
+.done-toggle{padding:5px 12px}
+.done-when{color:var(--text)}
+.hb-badge{background:#a3392b}
+.stack-count,.stack-avg{color:var(--text)}
+/* big pixel headings get a 2px outline so they hold up over the brightest water */
+:root{--outline2:-2px 0 0 var(--oc),2px 0 0 var(--oc),0 -2px 0 var(--oc),0 2px 0 var(--oc),-1px -1px 0 var(--oc),1px -1px 0 var(--oc),-1px 1px 0 var(--oc),1px 1px 0 var(--oc),2px 2px 0 var(--oc)}
+.hello h1,.board-title,.stack-head h3{text-shadow:var(--outline2)}
+/* the open Done list is a small log on parchment */
+.done-list{background:var(--parch);border:2px solid var(--ink);border-radius:8px;box-shadow:0 3px 0 var(--ink);padding:4px 14px;text-shadow:none}
+.done-name{color:var(--text)}
+:root[data-theme="dark"]{--oc:rgba(4,5,10,1)}
+.stack-count,.stack-avg{text-shadow:var(--outline2)}
