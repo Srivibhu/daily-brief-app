@@ -15,6 +15,8 @@ export default function App({ Component, pageProps }) {
         <title>Daily Brief</title>
       </Head>
       <PixelBackdrop />
+      {/* soft wash over the scene behind the content column, so text sits on calm ground without boxes */}
+      <div className="veil" aria-hidden="true" />
       <Component {...pageProps} />
     </>
   )

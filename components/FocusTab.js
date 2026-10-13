@@ -87,7 +87,7 @@ export default function FocusTab({ timer, tasks, sessions, focusTaskId, setFocus
           <input type="number" className="due-input" min="1" placeholder="Minutes" value={manual}
             onChange={e => setManual(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { onManualLog(+manual); setManual('') } }} />
-          <button className="btn ghost sm" onClick={() => { onManualLog(+manual); setManual('') }}>+ Log session</button>
+          <button className="link-btn" onClick={() => { onManualLog(+manual); setManual('') }}>+ Log minutes</button>
         </div>
       </div>
     </div>

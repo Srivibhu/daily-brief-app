@@ -31,8 +31,8 @@ export default function Login() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <ThemeToggle className="login-theme" />
-      <div className="panel" style={{ width: 360, maxWidth: '100%', padding: 32, background: 'var(--s1)' }}>
-        <div className="top-bar" style={{ display: 'block', marginBottom: 22 }}>
+      <div className="panel login-card">
+        <div className="login-head">
           <h1>Daily Brief</h1>
           <div className="sub">{mode === 'login' ? 'Sign in to your workspace' : 'Create your workspace'}</div>
         </div>
