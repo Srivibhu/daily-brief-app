@@ -7,6 +7,7 @@ import CalendarTab from '../components/CalendarTab'
 import AnalyticsTab from '../components/AnalyticsTab'
 import Sidebar from '../components/Sidebar'
 import TagModal from '../components/TagModal'
+import AccountModal from '../components/AccountModal'
 import ThemeToggle from '../components/ThemeToggle'
 import { PixelTomato } from '../components/PixelTimer'
 import { useTimer } from '../lib/useTimer'
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const [expanded, setExpanded] = useState(new Set())
   const [doneOpen, setDoneOpen] = useState(false)
   const [showTags, setShowTags] = useState(false)
+  const [showAccount, setShowAccount] = useState(false)
   const [focusTaskId, setFocusTaskId] = useState(null)
   const [today, setToday] = useState(todayStr())
   const [nq, setNq] = useState({ name: '', due: todayStr(), time: '', tag: '' })
@@ -167,7 +169,9 @@ export default function Dashboard() {
   const detailTask = detailId && tasks.find(t => t.id === detailId)
 
   const h = new Date().getHours()
-  const name = user?.username ? user.username[0].toUpperCase() + user.username.slice(1) : ''
+  // greet by the part before any '@' so an email-style username still reads like a name
+  const handle = (user?.username || '').split('@')[0]
+  const name = handle ? handle[0].toUpperCase() + handle.slice(1) : ''
   const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
 
   const FILTERS = [['all', 'All', live.length], ['today', 'Due today', nDueToday], ['overdue', 'Overdue', nOverdue], ['inprog', 'In progress', nProg], ['todo', 'Not started', live.length - nProg]]
@@ -185,6 +189,7 @@ export default function Dashboard() {
         <nav className="quiet-actions" aria-label="Account">
           <ThemeToggle />
           <button className="link-btn" onClick={() => setShowTags(true)}>Tags</button>
+          <button className="link-btn" onClick={() => setShowAccount(true)}>Account</button>
           <button className="link-btn" onClick={exportData}>Export</button>
           <button className="link-btn" onClick={logout}>Sign out</button>
         </nav>
@@ -243,7 +248,7 @@ export default function Dashboard() {
               <CategoryStacks groups={groups} expanded={expanded} onToggleExpand={toggleExpand} onOpen={setDetailId} onProgress={setProgress} />
 
               {done.length > 0 && (
-                <section className="done">
+                <section className="done-section">
                   <button className="done-toggle" aria-expanded={doneOpen} onClick={() => setDoneOpen(!doneOpen)}>
                     {doneOpen ? '▾' : '▸'} Done <span className="filter-n">{done.length}</span>
                   </button>
@@ -275,6 +280,7 @@ export default function Dashboard() {
 
       {detailTask && <TaskDetail key={detailTask.id} task={detailTask} tags={tags} onClose={() => setDetailId(null)}
         onProgress={setProgress} onUpdate={updateTask} onDelete={deleteTask} />}
+      {showAccount && <AccountModal user={user} onSaved={u => setUser(x => ({ ...x, ...u }))} onClose={() => setShowAccount(false)} />}
       {showTags && <TagModal tags={tags} setTags={setTags} onClose={() => setShowTags(false)} />}
     </div>
   )

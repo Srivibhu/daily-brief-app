@@ -74,8 +74,9 @@ body{font-family:var(--serif);background:var(--bg);color:var(--text);min-height:
 /* The veil: a feathered wash over the scene behind the content column.
    Text sits on calm ground, the waterfall stays visible at the edges and above the fold —
    one soft field instead of a dozen bordered panels. */
-:root{--veil:rgba(240,238,227,.87);--veil-top:rgba(240,238,227,.5)}
-:root[data-theme="dark"]{--veil:rgba(27,21,16,.91);--veil-top:rgba(27,21,16,.5)}
+/* light: a thin blue mist (like spray off the falls) instead of a white haze */
+:root{--veil:rgba(218,232,236,.66);--veil-top:rgba(218,232,236,.22)}
+:root[data-theme="dark"]{--veil:rgba(14,22,27,.78);--veil-top:rgba(14,22,27,.35)}
 .veil{position:fixed;top:0;bottom:0;left:50%;z-index:-1;pointer-events:none;
   width:calc(min(100vw,1240px) + 240px);transform:translateX(-50%);
   background:linear-gradient(180deg,var(--veil-top) 0,var(--veil-top) 120px,var(--veil) 360px);
@@ -147,9 +148,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,.task-card:focus-v
 .filter:hover{color:var(--text)}
 .filter.active{color:var(--text);font-weight:600;border-bottom-color:var(--text)}
 .filter.warn .filter-n{color:var(--red)}
-.filter-n{font-size:10.5px;font-weight:600;color:var(--dim);margin-left:5px;font-variant-numeric:tabular-nums}
+.filter-n{font-size:10.5px;font-weight:600;color:var(--sub);opacity:.75;margin-left:5px;font-variant-numeric:tabular-nums}
 .filter.active .filter-n{color:var(--sub)}
-.sort{display:flex;align-items:center;gap:4px;font-family:var(--sans);font-size:12px;color:var(--dim);flex-shrink:0}
+.sort{display:flex;align-items:center;gap:4px;font-family:var(--sans);font-size:12px;color:var(--sub);flex-shrink:0}
 .sort select{background:transparent;border:0;color:var(--sub);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;outline:none;padding:3px 0}
 .sort select option{background:var(--s1);color:var(--text)}
 
@@ -215,15 +216,15 @@ button:focus-visible,input:focus-visible,select:focus-visible,.task-card:focus-v
 .card-pct-input{font-family:var(--sans);font-size:11px;font-weight:700;background:var(--s1);border:1px solid var(--cat,var(--m-main));color:var(--text);border-radius:4px;width:44px;padding:1px 4px;text-align:center;outline:none}
 
 /* ── Done: a quiet list, not more cards ── */
-.done{margin-top:44px;border-top:1px solid var(--b2);padding-top:14px}
+.done-section{margin-top:44px;border-top:1px solid var(--b2);padding-top:14px}
 .done-toggle{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--sub);background:none;border:0;cursor:pointer;padding:4px 0}
 .done-toggle:hover{color:var(--text)}
 .done-list{list-style:none;margin-top:8px}
 .done-list li{display:flex;align-items:center;gap:12px;padding:8px 0}
 .done-list .card-check{width:18px;height:18px;--cat:var(--green)}
-.done-name{flex:1;text-align:left;background:none;border:0;cursor:pointer;font-family:var(--serif);font-size:14px;color:var(--sub);text-decoration:line-through;text-decoration-color:var(--dim)}
+.done-name{flex:1;text-align:left;background:none;border:0;cursor:pointer;font-family:var(--serif);font-size:14px;color:var(--sub);text-decoration:line-through;text-decoration-color:var(--sub)}
 .done-name:hover{color:var(--text)}
-.done-when{font-family:var(--sans);font-size:11px;color:var(--dim)}
+.done-when{font-family:var(--sans);font-size:11px;color:var(--sub)}
 
 /* ── Task detail sheet ── */
 .detail-sheet{width:560px}
@@ -266,7 +267,7 @@ input[type=range]{flex:1;accent-color:var(--m-main);cursor:pointer;height:4px}
 /* ══ Aside ══ */
 .sidebar{position:sticky;top:24px;display:flex;flex-direction:column;gap:38px;animation:rise .55s .1s cubic-bezier(.2,.7,.2,1) both}
 .aside-label{font-family:var(--sans);font-size:11px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline}
-.aside-note{font-weight:500;color:var(--dim)}
+.aside-note{font-weight:500;color:var(--sub)}
 .aside-empty{font-family:var(--sans);font-size:12px;color:var(--sub);padding:4px 0}
 .due-list{list-style:none}
 .due-item{display:flex;align-items:baseline;gap:10px;width:100%;background:none;border:0;padding:7px 0;cursor:pointer;text-align:left;border-bottom:1px solid var(--b2)}
@@ -355,6 +356,17 @@ input,select{color-scheme:inherit}
 .modal-back{position:fixed;inset:0;background:var(--overlay);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);animation:fade-in .2s ease}
 .modal{background:var(--s1);border-radius:18px;padding:24px 26px;width:420px;max-width:100%;max-height:86vh;max-height:86dvh;overflow:auto;overscroll-behavior:contain;box-shadow:var(--shadow-modal);animation:modal-in .28s cubic-bezier(.2,.7,.2,1)}
 .modal h2{font-size:19px;margin-bottom:15px}
+.detail-head h2{flex:1;margin:0}
+.account-sheet{width:400px}
+.acct-field{display:flex;flex-direction:column;gap:4px;margin-bottom:16px}
+.acct-field>span{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--sub)}
+.acct-field .field-input{font-size:14px;padding:8px 2px}
+.acct-field small{font-family:var(--sans);font-size:11px;color:var(--dim)}
+.acct-group{font-family:var(--serif);font-size:15px;font-weight:700;margin:24px 0 12px;padding-top:16px;border-top:1px solid var(--b2)}
+.acct-current{margin-top:24px;padding-top:16px;border-top:1px solid var(--b2)}
+.acct-msg{font-family:var(--sans);font-size:12px;color:var(--red);margin-top:4px}
+.acct-msg.ok{color:var(--green)}
+.btn:disabled{opacity:.5;cursor:default}
 .icon-btn{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--sub);font-size:20px;cursor:pointer;border-radius:50%;flex-shrink:0}
 .icon-btn:hover{background:var(--hover-moss);color:var(--text)}
 .tag-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--b2);font-family:var(--sans);font-size:13px}
