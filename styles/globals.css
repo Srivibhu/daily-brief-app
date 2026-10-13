@@ -669,3 +669,25 @@ kbd{font-family:var(--pixel);font-size:.9em;padding:0 5px;border:1px solid curre
 .panel .bar-track{height:9px}
 .panel-label .legend{float:right;font-family:var(--sans);font-size:12px;font-weight:600;color:var(--text);display:inline-flex;align-items:center;gap:6px}
 .panel-label .legend i{display:inline-block;width:10px;height:10px;border:2px solid var(--ink);border-radius:2px;margin-left:6px}
+
+/* ══ Phones: four pages side by side; swipe and the scene walks along the cliff ══ */
+.scene-art{left:0;will-change:transform}
+@media(max-width:699px){
+  html:has(.shell.paged),body:has(.shell.paged){overscroll-behavior:none}
+  body:has(.shell.paged){padding:0;overflow:hidden;height:100dvh}
+  .shell.paged{max-width:none;padding:0;margin:0}
+  .pager{position:fixed;inset:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:none;overscroll-behavior-y:contain;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .pager::-webkit-scrollbar{display:none}
+  .page{flex:0 0 100%;width:100%;height:100%;overflow-y:auto;overflow-x:hidden;scroll-snap-align:start;scroll-snap-stop:always;
+    overscroll-behavior-y:contain;padding:max(18px,env(safe-area-inset-top)) 16px 124px}
+  .page .hello{margin:8px 0 22px}
+  .page-title{margin:8px 0 18px}
+  .page .tabview{animation:none}
+}
+@media(max-width:699px) and (prefers-reduced-motion:reduce){.pager{scroll-behavior:auto}}
+@media(max-width:699px){
+  .page .summary{text-shadow:var(--outline2);font-weight:600}
+  .stats-view .activity-grid.wide{grid-template-columns:repeat(14,minmax(0,1fr));gap:4px}
+  .stats-view .act-cell{border-width:1.5px!important;box-shadow:0 1.5px 0 var(--ink)}
+}

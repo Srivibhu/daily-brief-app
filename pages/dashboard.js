@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/router'
 import CategoryStacks from '../components/CategoryStacks'
 import TaskDetail from '../components/TaskDetail'
@@ -11,6 +11,7 @@ import TagModal from '../components/TagModal'
 import AccountModal from '../components/AccountModal'
 import { useTheme, setTheme } from '../lib/theme'
 import { PixelTomato } from '../components/PixelTimer'
+import { setScenePan } from '../components/SceneBackdrop'
 import { useTimer } from '../lib/useTimer'
 import { useReminders } from '../lib/useReminders'
 import { api, todayStr, statusOf, urgencyInfo, PRIORITY_SORT } from '../lib/util'
@@ -18,7 +19,15 @@ import { api, todayStr, statusOf, urgencyInfo, PRIORITY_SORT } from '../lib/util
 // Categories shown first, in this order (from the sketch); any other tag gets its own stack after them.
 const CATEGORY_ORDER = ['Study', 'Work', 'Health']
 const categoryOf = t => CATEGORY_ORDER.find(c => (t.tags || []).includes(c)) || (t.tags || [])[0] || 'Unsorted'
+const PAGES = ['tasks', 'focus', 'calendar', 'analytics']
 const mmss = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+
+// phone layout = the swipeable pager (kept in step with the CSS breakpoint)
+const PHONE_Q = '(max-width: 699px)'
+function usePhone() {
+  return useSyncExternalStore(cb => { const m = window.matchMedia(PHONE_Q); m.addEventListener('change', cb); return () => m.removeEventListener('change', cb) },
+    () => window.matchMedia(PHONE_Q).matches, () => false)
+}
 
 export default function Dashboard() {
   const router = useRouter()
@@ -41,6 +50,8 @@ export default function Dashboard() {
   const [today, setToday] = useState(todayStr())
   const [adding, setAdding] = useState(false)
   const pending = useRef({})
+  const pager = useRef(null)
+  const phone = usePhone()
 
   // ── Boot ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -79,6 +90,31 @@ export default function Dashboard() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  // ── Phone pager: the scroll position drives the scene and the hotbar ───────────
+  useEffect(() => {
+    if (!phone) { setScenePan(null); return }
+    const el = pager.current
+    if (el) el.scrollLeft = PAGES.indexOf(tab) * el.clientWidth
+    setScenePan(PAGES.indexOf(tab))
+    const keep = () => { const el = pager.current; if (el) { el.scrollLeft = PAGES.indexOf(tabRef.current) * el.clientWidth; setScenePan(PAGES.indexOf(tabRef.current)) } }
+    window.addEventListener('resize', keep)
+    return () => { window.removeEventListener('resize', keep); setScenePan(null) }
+  }, [phone, authLoading]) // eslint-disable-line
+  const tabRef = useRef(tab)
+  tabRef.current = tab
+  function onPagerScroll(e) {
+    const el = e.currentTarget, p = el.scrollLeft / el.clientWidth
+    setScenePan(p)
+    const k = PAGES[Math.round(p)]
+    if (k && k !== tabRef.current) { tabRef.current = k; setTab(k) }
+  }
+  function goTab(k) {
+    if (!phone || !pager.current) return setTab(k)
+    const el = pager.current
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    el.scrollTo({ left: PAGES.indexOf(k) * el.clientWidth, behavior: reduce ? 'auto' : 'smooth' })
+  }
 
   // ── Activity ─────────────────────────────────────────────────────────────────
   function recordActivity() {
@@ -195,77 +231,96 @@ export default function Dashboard() {
     ['analytics', 'Stats', <PixelIcon name="stats" />],
   ]
 
+  const hello = (
+    <section className="hello">
+      <div className="dateline">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+      <h1>{h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}{name && `, ${name}`}</h1>
+      <p className="summary">
+        {nDueToday ? <><b>{plural(nDueToday, 'task')}</b> due today</> : 'Nothing due today'}
+        {nOverdue > 0 && <>, <b className="warn">{nOverdue} overdue</b></>}.{' '}
+        <b>{nProg}</b> in progress, <b>{todayMins} min</b> focused, <b>{overall}%</b> through the list.
+      </p>
+    </section>
+  )
+
+  const tasksView = (
+    <>
+      <div className="board-head">
+        <h2 className="board-title">Tasks</h2>
+        <div className="chips">
+          <label className="chip">
+            <span className="sr-only">Show</span>
+            <select value={filter} onChange={e => setFilter(e.target.value)} aria-label="Filter tasks">
+              {FILTERS.map(([v, l, n]) => <option key={v} value={v}>{l} ({n})</option>)}
+            </select>
+          </label>
+          <label className="chip">
+            <span className="chip-k">Sort</span>
+            <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Sort tasks">
+              <option value="due">Due date</option><option value="priority">Priority</option>
+              <option value="progress">Progress</option><option value="created">Newest</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {!groups.length && (
+        <p className="empty">{filter === 'all' ? <>No open tasks. Press <kbd>N</kbd> or the <b>+</b> below to add one.</> : 'Nothing matches this filter.'}</p>
+      )}
+      <CategoryStacks groups={groups} expanded={expanded} onToggleExpand={toggleExpand} onOpen={setDetailId} onProgress={setProgress} />
+
+      {done.length > 0 && (
+        <section className="done-section">
+          <button className="done-toggle" aria-expanded={doneOpen} onClick={() => setDoneOpen(!doneOpen)}>
+            {doneOpen ? '▾' : '▸'} Done <span className="filter-n">{done.length}</span>
+          </button>
+          {doneOpen && (
+            <ul className="done-list">
+              {done.map(t => (
+                <li key={t.id}>
+                  <button className="card-check done" aria-label="Mark incomplete" onClick={() => setProgress(t.id, 0)} />
+                  <button className="done-name" onClick={() => setDetailId(t.id)}>{t.name}</button>
+                  <span className="done-when">{t.completed_at}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+    </>
+  )
+
+  const TITLES = { focus: 'Focus', calendar: 'Calendar', analytics: 'Stats' }
+  const view = k => k === 'tasks' ? tasksView : (
+    <section className={`tabview tab-${k}`} aria-label={TITLES[k]}>
+      {phone && k !== 'calendar' && <h2 className="board-title page-title">{TITLES[k]}</h2>}
+      {k === 'focus' && (
+        <FocusTab timer={timer} tasks={tasks} sessions={sessions} focusTaskId={focusTaskId} setFocusTaskId={setFocusTaskId}
+          onDeleteSession={deleteSession} onManualLog={manualLog} />
+      )}
+      {k === 'calendar' && <CalendarTab tasks={tasks} tags={tags} />}
+      {k === 'analytics' && <AnalyticsTab tasks={tasks} sessions={sessions} activity={activity} />}
+    </section>
+  )
+
   return (
-    <div className="shell">
-      <section className="hello">
-        <div className="dateline">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</div>
-        <h1>{h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}{name && `, ${name}`}</h1>
-        <p className="summary">
-          {nDueToday ? <><b>{plural(nDueToday, 'task')}</b> due today</> : 'Nothing due today'}
-          {nOverdue > 0 && <>, <b className="warn">{nOverdue} overdue</b></>}.{' '}
-          <b>{nProg}</b> in progress, <b>{todayMins} min</b> focused, <b>{overall}%</b> through the list.
-        </p>
-      </section>
-
-      <main className="board">
-        {tab === 'tasks' && (
-          <>
-            <div className="board-head">
-              <h2 className="board-title">Tasks</h2>
-              <div className="chips">
-                <label className="chip">
-                  <span className="sr-only">Show</span>
-                  <select value={filter} onChange={e => setFilter(e.target.value)} aria-label="Filter tasks">
-                    {FILTERS.map(([v, l, n]) => <option key={v} value={v}>{l} ({n})</option>)}
-                  </select>
-                </label>
-                <label className="chip">
-                  <span className="chip-k">Sort</span>
-                  <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Sort tasks">
-                    <option value="due">Due date</option><option value="priority">Priority</option>
-                    <option value="progress">Progress</option><option value="created">Newest</option>
-                  </select>
-                </label>
-              </div>
+    <div className={`shell${phone ? ' paged' : ''}`}>
+      {phone ? (
+        // phones: the four pages sit side by side; swipe (or tap the hotbar) and the scene walks with you
+        <div className="pager" ref={pager} onScroll={onPagerScroll}>
+          {PAGES.map(k => (
+            <div className="page" key={k} data-page={k} aria-hidden={tab !== k} inert={tab !== k ? '' : undefined}>
+              {k === 'tasks' && hello}
+              <main className="board">{view(k)}</main>
             </div>
-
-            {!groups.length && (
-              <p className="empty">{filter === 'all' ? <>No open tasks. Press <kbd>N</kbd> or the <b>+</b> below to add one.</> : 'Nothing matches this filter.'}</p>
-            )}
-            <CategoryStacks groups={groups} expanded={expanded} onToggleExpand={toggleExpand} onOpen={setDetailId} onProgress={setProgress} />
-
-            {done.length > 0 && (
-              <section className="done-section">
-                <button className="done-toggle" aria-expanded={doneOpen} onClick={() => setDoneOpen(!doneOpen)}>
-                  {doneOpen ? '▾' : '▸'} Done <span className="filter-n">{done.length}</span>
-                </button>
-                {doneOpen && (
-                  <ul className="done-list">
-                    {done.map(t => (
-                      <li key={t.id}>
-                        <button className="card-check done" aria-label="Mark incomplete" onClick={() => setProgress(t.id, 0)} />
-                        <button className="done-name" onClick={() => setDetailId(t.id)}>{t.name}</button>
-                        <span className="done-when">{t.completed_at}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            )}
-          </>
-        )}
-
-        {tab !== 'tasks' && (
-          <section className={`tabview tab-${tab}`} aria-label={tab === 'analytics' ? 'Stats' : tab[0].toUpperCase() + tab.slice(1)}>
-            {tab === 'focus' && (
-              <FocusTab timer={timer} tasks={tasks} sessions={sessions} focusTaskId={focusTaskId} setFocusTaskId={setFocusTaskId}
-                onDeleteSession={deleteSession} onManualLog={manualLog} />
-            )}
-            {tab === 'calendar' && <CalendarTab tasks={tasks} tags={tags} />}
-            {tab === 'analytics' && <AnalyticsTab tasks={tasks} sessions={sessions} activity={activity} />}
-          </section>
-        )}
-      </main>
+          ))}
+        </div>
+      ) : (
+        <>
+          {hello}
+          <main className="board">{view(tab)}</main>
+        </>
+      )}
 
       {/* the hotbar: every control, always in the same place */}
       <nav className="hotbar" aria-label="Main">
@@ -274,7 +329,7 @@ export default function Dashboard() {
         </button>
         <div className="hb-group" role="tablist">
           {HOTBAR.map(([k, l, icon, badge]) => (
-            <button key={k} role="tab" aria-selected={tab === k} className={`hb-btn${tab === k ? ' on' : ''}`} onClick={() => setTab(k)}>
+            <button key={k} role="tab" aria-selected={tab === k} className={`hb-btn${tab === k ? ' on' : ''}`} onClick={() => goTab(k)}>
               <span className="hb-icon">{icon}{badge > 0 && <span className="hb-badge" aria-label={`${badge} need attention`}>{badge}</span>}</span>
               <span className="hb-label">{k === 'focus' && timer.running && tab !== 'focus' ? mmss(timer.secs) : l}</span>
             </button>

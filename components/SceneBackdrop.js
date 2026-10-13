@@ -28,6 +28,26 @@ export function sceneBox(vw, vh) {
   return { s, width, height, left, top }
 }
 
+// Phones swipe between pages and the scene walks along the cliff with them. Each page has a stop
+// (the art x to centre): Tasks by the house and egg, Focus at the falls, Calendar by the pool,
+// Stats at the gazebo. Stops are spaced so the scene never moves faster than the cards.
+export const PAN_STOPS = [300, 655, 960, 1199]
+let pan = null, wrapEl = null
+function panX(p) {
+  const n = PAN_STOPS.length - 1, q = Math.max(0, Math.min(n, p)), i = Math.min(n - 1, Math.floor(q))
+  return PAN_STOPS[i] + (PAN_STOPS[i + 1] - PAN_STOPS[i]) * (q - i)
+}
+function placeScene() {
+  if (!wrapEl) return
+  const vw = window.innerWidth, vh = window.innerHeight, b = sceneBox(vw, vh)
+  const left = pan === null ? b.left : Math.min(0, Math.max(vw - b.width, vw / 2 - panX(pan) * b.s))
+  const st = wrapEl.style
+  st.width = b.width + 'px'; st.height = b.height + 'px'; st.top = b.top + 'px'; st.left = '0px'
+  st.transform = `translate3d(${left}px,0,0)`
+}
+// p = page position as a float (0 = Tasks … 3 = Stats), or null to go back to the fixed layout
+export function setScenePan(p) { pan = p; placeScene() }
+
 // cheap deterministic noise for per-frame sparkle
 function hash(a, b, c) { let h = (a * 374761393 + b * 668265263 + c * 1274126177) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296 }
 
@@ -44,13 +64,10 @@ export default function SceneBackdrop() {
 
   // size + place the art
   useEffect(() => {
-    const place = () => {
-      const b = sceneBox(window.innerWidth, window.innerHeight)
-      Object.assign(wrap.current.style, { width: b.width + 'px', height: b.height + 'px', left: b.left + 'px', top: b.top + 'px' })
-    }
-    place()
-    window.addEventListener('resize', place)
-    return () => window.removeEventListener('resize', place)
+    wrapEl = wrap.current
+    placeScene()
+    window.addEventListener('resize', placeScene)
+    return () => { window.removeEventListener('resize', placeScene); wrapEl = null }
   }, [])
 
   // animation loop (~12 fps, paused when the tab is hidden, off for reduced motion)
