@@ -20,9 +20,8 @@ import { useTimer } from '../lib/useTimer'
 import { useReminders } from '../lib/useReminders'
 import { api, todayStr, statusOf, urgencyInfo, PRIORITY_SORT } from '../lib/util'
 
-// Categories shown first, in this order (from the sketch); any other tag gets its own stack after them.
-const CATEGORY_ORDER = ['Study', 'Work', 'Health']
-const categoryOf = t => CATEGORY_ORDER.find(c => (t.tags || []).includes(c)) || (t.tags || [])[0] || 'Unsorted'
+// categoryOf: first tag wins; falls back to 'Unsorted'
+const categoryOf = t => (t.tags || [])[0] || 'Unsorted'
 const PAGES = ['tasks', 'focus', 'calendar', 'analytics']
 const mmss = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 
@@ -307,10 +306,11 @@ export default function Dashboard() {
   const active = filtered.filter(t => t.progress < 100).sort(sortFn)
   const done = tasks.filter(t => t.progress === 100).sort((a, b) => (b.completed_at || '').localeCompare(a.completed_at || ''))
 
-  // group into category stacks
+  // group into category stacks — ordered by the tag list (user's own order), then Unsorted
   const byCat = {}
   active.forEach(t => (byCat[categoryOf(t)] ||= []).push(t))
-  const catNames = [...CATEGORY_ORDER, ...tags.map(g => g.name).filter(n => !CATEGORY_ORDER.includes(n)), 'Unsorted']
+  const tagOrder = tags.map(g => g.name)
+  const catNames = [...tagOrder, ...Object.keys(byCat).filter(n => !tagOrder.includes(n))]
   const groups = catNames.filter(n => byCat[n]).map(n => ({ name: n, color: (tags.find(g => g.name === n) || {}).color || 'var(--m-soft)', tasks: byCat[n] }))
   const toggleExpand = name => setExpanded(s => { const n = new Set(s); n.has(name) ? n.delete(name) : n.add(name); return n })
   const detailTask = detailId && tasks.find(t => t.id === detailId)

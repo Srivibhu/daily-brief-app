@@ -95,3 +95,7 @@ CREATE TABLE IF NOT EXISTS pets (
   spent_pearls INT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Google OAuth columns (added lazily by /api/auth/google on first use; safe to apply here too)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;
