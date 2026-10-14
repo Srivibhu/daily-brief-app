@@ -33,17 +33,19 @@ export default withAuth(async function handler(req, res) {
     }
     clearLimit(key)
     try {
-      await sql`DELETE FROM focus_sessions WHERE user_id = ${user.id}`
-      await sql`DELETE FROM daily_activity WHERE user_id = ${user.id}`
-      await sql`DELETE FROM tasks WHERE user_id = ${user.id}`
-      await sql`DELETE FROM tags WHERE user_id = ${user.id}`
-      await sql`DELETE FROM pets WHERE user_id = ${user.id}`
+      // Each table may not exist yet on a fresh DB — ignore those errors
+      const tryDel = async (q) => { try { await q } catch {} }
+      await tryDel(sql`DELETE FROM focus_sessions WHERE user_id = ${user.id}`)
+      await tryDel(sql`DELETE FROM daily_activity WHERE user_id = ${user.id}`)
+      await tryDel(sql`DELETE FROM tasks WHERE user_id = ${user.id}`)
+      await tryDel(sql`DELETE FROM tags WHERE user_id = ${user.id}`)
+      await tryDel(sql`DELETE FROM pets WHERE user_id = ${user.id}`)
       await sql`DELETE FROM users WHERE id = ${user.id}`
       res.setHeader('Set-Cookie', 'token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0')
       return res.status(200).json({ ok: true })
     } catch (err) {
-      console.error(err)
-      return res.status(500).json({ error: 'Could not delete account' })
+      console.error('delete account error:', err)
+      return res.status(500).json({ error: 'Could not delete account: ' + err.message })
     }
   }
 
