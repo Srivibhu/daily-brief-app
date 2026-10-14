@@ -23,15 +23,24 @@ export default function AccountModal({ user, onSaved, onClose, onExport, onSignO
   const nameChanged = username.trim().toLowerCase() !== (user?.username || '').toLowerCase()
   const pwChanged = next.length > 0
 
+  const isGoogleOnly = user?.isGoogleOnly
+
   async function deleteAccount(e) {
     e.preventDefault()
-    if (!deletePassword) return setDeleteMsg('Enter your password to confirm.')
+    if (isGoogleOnly) {
+      if (deletePassword !== 'DELETE') return setDeleteMsg('Type DELETE exactly to confirm.')
+    } else {
+      if (!deletePassword) return setDeleteMsg('Enter your password to confirm.')
+    }
     setBusy(true)
     setDeleteMsg(null)
+    const body = isGoogleOnly
+      ? { googleConfirm: deletePassword }
+      : { currentPassword: deletePassword }
     try {
-      const d = await api('/api/auth/account', { method: 'DELETE', body: { currentPassword: deletePassword } })
+      const d = await api('/api/auth/account', { method: 'DELETE', body })
       if (d?.ok) {
-        onSignOut?.() // clears local state and redirects to login
+        onSignOut?.()
       } else {
         setDeleteMsg(d?.error || 'Could not delete account.')
       }
@@ -117,9 +126,11 @@ export default function AccountModal({ user, onSaved, onClose, onExport, onSignO
             <div className="acct-delete-confirm">
               <p className="acct-delete-warning">⚠️ This permanently deletes your account and all data. This cannot be undone.</p>
               <label className="acct-field">
-                <span>Confirm password</span>
-                <input className="field-input" type="password" value={deletePassword} autoComplete="current-password"
-                  placeholder="Enter your password" onChange={e => setDeletePassword(e.target.value)} />
+                <span>{isGoogleOnly ? 'Type DELETE to confirm' : 'Confirm password'}</span>
+                <input className="field-input" type={isGoogleOnly ? 'text' : 'password'}
+                  value={deletePassword} autoComplete={isGoogleOnly ? 'off' : 'current-password'}
+                  placeholder={isGoogleOnly ? 'DELETE' : 'Enter your password'}
+                  onChange={e => setDeletePassword(e.target.value)} />
               </label>
               {deleteMsg && <p className="acct-msg" role="status">{deleteMsg}</p>}
               <div className="acct-delete-actions">

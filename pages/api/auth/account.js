@@ -8,21 +8,28 @@ import { rateLimit, limited, clearLimit, passwordProblem, usernameProblem } from
 export default withAuth(async function handler(req, res) {
   if (req.method !== 'PATCH' && req.method !== 'DELETE') return res.status(405).end()
 
-  const { currentPassword, username, newPassword } = req.body || {}
-  if (!currentPassword || typeof currentPassword !== 'string') return res.status(400).json({ error: 'Enter your current password' })
+  const { currentPassword, username, newPassword, googleConfirm } = req.body || {}
   const key = 'account:' + req.userId
   if (limited(res, rateLimit(key, { max: 8, windowMs: 15 * 60e3 }))) return
 
-  const { rows } = await sql`SELECT id, username, password_hash FROM users WHERE id = ${req.userId} LIMIT 1`
+  const { rows } = await sql`SELECT id, username, password_hash, google_id FROM users WHERE id = ${req.userId} LIMIT 1`
   const user = rows[0]
   if (!user) return res.status(404).json({ error: 'User not found' })
-  if (!(await bcrypt.compare(currentPassword, user.password_hash))) {
-    return res.status(401).json({ error: 'Current password is incorrect' })
-  }
-  clearLimit(key)
+
+  const isGoogleOnly = !!user.google_id && !user.password_hash
 
   // DELETE — wipe the account and everything belonging to it
   if (req.method === 'DELETE') {
+    if (isGoogleOnly) {
+      // Google-only accounts: require typing "DELETE" to confirm
+      if (googleConfirm !== 'DELETE') return res.status(400).json({ error: 'Type DELETE to confirm.' })
+    } else {
+      if (!currentPassword || typeof currentPassword !== 'string') return res.status(400).json({ error: 'Enter your current password' })
+      if (!(await bcrypt.compare(currentPassword, user.password_hash))) {
+        return res.status(401).json({ error: 'Password is incorrect' })
+      }
+    }
+    clearLimit(key)
     try {
       await sql`DELETE FROM focus_sessions WHERE user_id = ${user.id}`
       await sql`DELETE FROM daily_activity WHERE user_id = ${user.id}`
@@ -30,7 +37,6 @@ export default withAuth(async function handler(req, res) {
       await sql`DELETE FROM tags WHERE user_id = ${user.id}`
       await sql`DELETE FROM pets WHERE user_id = ${user.id}`
       await sql`DELETE FROM users WHERE id = ${user.id}`
-      // Clear the auth cookie
       res.setHeader('Set-Cookie', 'token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0')
       return res.status(200).json({ ok: true })
     } catch (err) {
@@ -38,6 +44,13 @@ export default withAuth(async function handler(req, res) {
       return res.status(500).json({ error: 'Could not delete account' })
     }
   }
+
+  // PATCH — require password for password accounts
+  if (!currentPassword || typeof currentPassword !== 'string') return res.status(400).json({ error: 'Enter your current password' })
+  if (!(await bcrypt.compare(currentPassword, user.password_hash))) {
+    return res.status(401).json({ error: 'Current password is incorrect' })
+  }
+  clearLimit(key)
 
   let nextName = user.username
   if (username !== undefined && username.trim().toLowerCase() !== user.username) {
