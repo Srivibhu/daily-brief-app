@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import ThemeToggle from '../components/ThemeToggle'
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
 export default function Login() {
   const router = useRouter()
@@ -9,6 +11,64 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const googleDiv = useRef(null)
+
+  // Load Google Identity Services and render the button
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return
+    const el = googleDiv.current
+    if (!el) return
+
+    function init() {
+      if (!window.google?.accounts?.id) return
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredential,
+        auto_select: false,
+      })
+      window.google.accounts.id.renderButton(el, {
+        type: 'standard',
+        shape: 'rectangular',
+        theme: 'outline',
+        text: 'continue_with',
+        size: 'large',
+        width: el.offsetWidth || 280,
+        logo_alignment: 'center',
+      })
+    }
+
+    if (window.google?.accounts?.id) {
+      init()
+    } else {
+      const script = document.getElementById('google-gsi') || (() => {
+        const s = document.createElement('script')
+        s.id = 'google-gsi'
+        s.src = 'https://accounts.google.com/gsi/client'
+        s.async = true
+        s.defer = true
+        document.head.appendChild(s)
+        return s
+      })()
+      script.addEventListener('load', init)
+      return () => script.removeEventListener('load', init)
+    }
+  }, []) // eslint-disable-line
+
+  async function handleGoogleCredential({ credential }) {
+    setError(''); setLoading(true)
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || 'Google sign-in failed'); setLoading(false); return }
+      router.push('/dashboard')
+    } catch {
+      setError('Network error'); setLoading(false)
+    }
+  }
 
   async function submit(e) {
     e.preventDefault()
@@ -36,6 +96,18 @@ export default function Login() {
           <h1>Daily Brief</h1>
           <div className="sub">{mode === 'login' ? 'Sign in to your workspace' : 'Create your workspace'}</div>
         </div>
+
+        {GOOGLE_CLIENT_ID && (
+          <>
+            <div ref={googleDiv} style={{ display: 'flex', justifyContent: 'center', minHeight: 44, marginBottom: 4 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0' }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              <span style={{ fontFamily: 'var(--sans)', fontSize: 11, color: 'var(--sub)', whiteSpace: 'nowrap' }}>or with username</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            </div>
+          </>
+        )}
+
         <form onSubmit={submit}>
           <div className="field-label" style={{ marginTop: 0 }}>Username</div>
           <input className="due-input" style={{ width: '100%', padding: '9px 10px', fontSize: 13 }} value={username}

@@ -16,7 +16,8 @@ export default function AccountModal({ user, onSaved, onClose, onExport, onSignO
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  const nameChanged = username.trim().toLowerCase() !== (user?.username || '')
+  // DB stores lowercase; compare normalized so typed "Sri" vs stored "sri" doesn't block updates
+  const nameChanged = username.trim().toLowerCase() !== (user?.username || '').toLowerCase()
   const pwChanged = next.length > 0
 
   async function save(e) {
