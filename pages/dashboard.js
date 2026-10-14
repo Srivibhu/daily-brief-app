@@ -14,7 +14,7 @@ import { FocusHud } from '../components/Hud'
 import EverfallIntro, { DogSpot } from '../components/EverfallIntro'
 import { computePet, setPetState, petReact, MOODS } from '../lib/pet'
 import { useTheme, setTheme } from '../lib/theme'
-import { accountIsNew, introSeen, markIntroSeen, REPLAY_FROM, PANELS } from '../lib/intro'
+import { markIntroSeen, REPLAY_FROM, PANELS } from '../lib/intro'
 import { setScenePan } from '../components/SceneBackdrop'
 import { useTimer } from '../lib/useTimer'
 import { useReminders } from '../lib/useReminders'
@@ -59,7 +59,6 @@ export default function Dashboard() {
   const [petPreview, setPetPreview] = useState(null)
   const [petData, setPetData] = useState(null)    // /api/pet: name, skin, owned, balances, all-time totals
   const [introStep, setIntroStep] = useState(null) // the Everfall tour: null = not running, else 0…7
-  const [dataReady, setDataReady] = useState(false) // tasks, sessions and pet totals have all landed
   const introDone = useRef(false)
   const pending = useRef({})
   const pager = useRef(null)
@@ -100,7 +99,6 @@ export default function Dashboard() {
       // so the intro can still detect a brand-new account rather than waiting forever.
       setPetData({ totalMinutes: 0, tasksDone: 0 })
     }
-    setDataReady(true)
   }
 
   // Date rollover
@@ -166,16 +164,15 @@ export default function Dashboard() {
     try { if (!localStorage.getItem('db-pet-hatched')) { localStorage.setItem('db-pet-hatched', '1'); setShowPet('hatched') } } catch {}
   }, [pet.real, authLoading, tasks.length])
   // ── The Everfall intro ───────────────────────────────────────────────────────
-  // New accounts only: it needs the pet totals in hand to tell a first load from a returning one, so
-  // an existing user is never ambushed. Afterwards it is replayed by tapping the dog on the porch (or
-  // from the account sheet, where it is reachable on a phone and by keyboard).
+  // Fires once when we know the user hasn't seen it (server flag). No task/session/pet
+  // counting needed — the server is the source of truth, so deleting and recreating an
+  // account always shows the intro on the new account regardless of localStorage state.
   useEffect(() => {
-    if (authLoading || !dataReady || introDone.current || introStep !== null || introSeen()) return
-    if (!petData) return  // pet totals not in yet — wait before deciding new vs returning
-    if (!accountIsNew({ tasks, sessions, petData })) { introDone.current = true; return }
+    if (authLoading || introDone.current || introStep !== null) return
+    if (!user || user.introSeen) { introDone.current = true; return }
     introDone.current = true
     setIntroStep(0)
-  }, [authLoading, dataReady, petData, tasks, sessions, introStep])
+  }, [authLoading, user, introStep])
   // Panel 05's link row should already hold the quest from panel 04. Fill it if nothing is linked.
   useEffect(() => {
     if (introStep == null || PANELS[introStep]?.id !== 'clock') return
@@ -186,7 +183,9 @@ export default function Dashboard() {
     })
   }, [introStep, tasks])
   function endIntro() {
-    markIntroSeen(); introDone.current = true
+    markIntroSeen() // localStorage fallback for replay detection
+    api('/api/auth/intro-seen', { method: 'POST' }).catch(() => {}) // persist to server
+    introDone.current = true
     setIntroStep(null); setShowPet(false); setPetPreview(null)
   }
   function replayIntro() { setShowPet(false); setPetPreview(null); setIntroStep(REPLAY_FROM) }

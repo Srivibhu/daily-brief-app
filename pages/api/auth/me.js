@@ -3,8 +3,9 @@ import { sql } from '../../../lib/db'
 
 export default withAuth(async function handler(req, res) {
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT`
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS intro_seen BOOLEAN NOT NULL DEFAULT FALSE`
   const { rows } = await sql`
-    SELECT id, username, created_at, google_id, password_hash FROM users WHERE id = ${req.userId} LIMIT 1`
+    SELECT id, username, created_at, google_id, password_hash, intro_seen FROM users WHERE id = ${req.userId} LIMIT 1`
   const user = rows[0]
   if (!user) return res.status(404).json({ error: 'User not found' })
   return res.status(200).json({ user: {
@@ -12,5 +13,6 @@ export default withAuth(async function handler(req, res) {
     username: user.username,
     created_at: user.created_at,
     isGoogleOnly: !!user.google_id && !user.password_hash,
+    introSeen: !!user.intro_seen,
   } })
 })
