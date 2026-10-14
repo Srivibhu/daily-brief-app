@@ -95,6 +95,10 @@ export default function Dashboard() {
         if (old && !pet.name) namePet(old)
         localStorage.removeItem('db-pet-name')
       } catch {}
+    } else {
+      // Pet fetch failed (e.g. table not yet created) — use a zero-state sentinel
+      // so the intro can still detect a brand-new account rather than waiting forever.
+      setPetData({ totalMinutes: 0, tasksDone: 0 })
     }
     setDataReady(true)
   }
