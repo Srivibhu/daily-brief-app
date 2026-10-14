@@ -551,6 +551,12 @@ kbd{font-family:var(--pixel);font-size:.9em;padding:0 5px;border:1px solid curre
 .quest-when{display:flex;gap:18px;margin-bottom:6px}
 .quest-when label{display:flex;flex-direction:column;gap:4px;font-family:var(--pixel);font-size:13px;color:var(--sub)}
 .acct-more{display:flex;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:2px dashed color-mix(in srgb,var(--ink) 30%,transparent)}
+.acct-danger-zone{margin-top:18px;padding-top:14px;border-top:1px solid var(--danger-line)}
+.acct-delete-confirm{display:flex;flex-direction:column;gap:10px}
+.acct-delete-warning{font-family:var(--sans);font-size:12px;color:var(--red);margin:0}
+.acct-delete-actions{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.btn-danger{background:var(--red)!important;color:#fff!important;border-color:transparent!important}
+.btn-danger:hover{opacity:.85}
 .activity-grid.wide{grid-template-columns:repeat(14,24px);gap:5px;margin-bottom:8px}
 .activity-grid.wide .act-cell{border:1px solid color-mix(in srgb,var(--ink) 40%,transparent)}
 

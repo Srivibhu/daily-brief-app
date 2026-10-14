@@ -3,10 +3,10 @@ import { withAuth } from '../../../lib/auth'
 import { sql } from '../../../lib/db'
 import { rateLimit, limited, clearLimit, passwordProblem, usernameProblem } from '../../../lib/security'
 
-// PATCH { currentPassword, username?, newPassword? }
-// Any change requires the current password.
+// PATCH { currentPassword, username?, newPassword? } — update username / password
+// DELETE { currentPassword } — permanently delete the account and all its data
 export default withAuth(async function handler(req, res) {
-  if (req.method !== 'PATCH') return res.status(405).end()
+  if (req.method !== 'PATCH' && req.method !== 'DELETE') return res.status(405).end()
 
   const { currentPassword, username, newPassword } = req.body || {}
   if (!currentPassword || typeof currentPassword !== 'string') return res.status(400).json({ error: 'Enter your current password' })
@@ -20,6 +20,24 @@ export default withAuth(async function handler(req, res) {
     return res.status(401).json({ error: 'Current password is incorrect' })
   }
   clearLimit(key)
+
+  // DELETE — wipe the account and everything belonging to it
+  if (req.method === 'DELETE') {
+    try {
+      await sql`DELETE FROM focus_sessions WHERE user_id = ${user.id}`
+      await sql`DELETE FROM daily_activity WHERE user_id = ${user.id}`
+      await sql`DELETE FROM tasks WHERE user_id = ${user.id}`
+      await sql`DELETE FROM tags WHERE user_id = ${user.id}`
+      await sql`DELETE FROM pets WHERE user_id = ${user.id}`
+      await sql`DELETE FROM users WHERE id = ${user.id}`
+      // Clear the auth cookie
+      res.setHeader('Set-Cookie', 'token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0')
+      return res.status(200).json({ ok: true })
+    } catch (err) {
+      console.error(err)
+      return res.status(500).json({ error: 'Could not delete account' })
+    }
+  }
 
   let nextName = user.username
   if (username !== undefined && username.trim().toLowerCase() !== user.username) {

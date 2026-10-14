@@ -9,6 +9,9 @@ export default function AccountModal({ user, onSaved, onClose, onExport, onSignO
   const [confirm, setConfirm] = useState('')
   const [msg, setMsg] = useState(null) // { ok, text }
   const [busy, setBusy] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleteMsg, setDeleteMsg] = useState(null)
 
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose() }
@@ -19,6 +22,22 @@ export default function AccountModal({ user, onSaved, onClose, onExport, onSignO
   // DB stores lowercase; compare normalized so typed "Sri" vs stored "sri" doesn't block updates
   const nameChanged = username.trim().toLowerCase() !== (user?.username || '').toLowerCase()
   const pwChanged = next.length > 0
+
+  async function deleteAccount(e) {
+    e.preventDefault()
+    if (!deletePassword) return setDeleteMsg('Enter your password to confirm.')
+    setBusy(true)
+    setDeleteMsg(null)
+    try {
+      const d = await api('/api/auth/account', { method: 'DELETE', body: { currentPassword: deletePassword } })
+      if (d?.ok) {
+        onSignOut?.() // clears local state and redirects to login
+      } else {
+        setDeleteMsg(d?.error || 'Could not delete account.')
+      }
+    } catch { setDeleteMsg('Network error.') }
+    setBusy(false)
+  }
 
   async function save(e) {
     e.preventDefault()
@@ -88,6 +107,30 @@ export default function AccountModal({ user, onSaved, onClose, onExport, onSignO
             {onSignOut && <button type="button" className="link-btn danger" onClick={onSignOut}>Sign out</button>}
           </div>
         )}
+
+        <div className="acct-danger-zone">
+          {!deletingAccount ? (
+            <button type="button" className="link-btn danger" onClick={() => { setDeletingAccount(true); setDeleteMsg(null); setDeletePassword('') }}>
+              Delete account
+            </button>
+          ) : (
+            <div className="acct-delete-confirm">
+              <p className="acct-delete-warning">⚠️ This permanently deletes your account and all data. This cannot be undone.</p>
+              <label className="acct-field">
+                <span>Confirm password</span>
+                <input className="field-input" type="password" value={deletePassword} autoComplete="current-password"
+                  placeholder="Enter your password" onChange={e => setDeletePassword(e.target.value)} />
+              </label>
+              {deleteMsg && <p className="acct-msg" role="status">{deleteMsg}</p>}
+              <div className="acct-delete-actions">
+                <button type="button" className="link-btn" onClick={() => setDeletingAccount(false)}>Cancel</button>
+                <button type="button" className="btn btn-danger" disabled={busy} onClick={deleteAccount}>
+                  {busy ? 'Deleting…' : 'Delete forever'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </form>
     </div>
   )
