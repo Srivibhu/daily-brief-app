@@ -167,6 +167,7 @@ export default function Dashboard() {
   // from the account sheet, where it is reachable on a phone and by keyboard).
   useEffect(() => {
     if (authLoading || !dataReady || introDone.current || introStep !== null || introSeen()) return
+    if (!petData) return  // pet totals not in yet — wait before deciding new vs returning
     if (!accountIsNew({ tasks, sessions, petData })) { introDone.current = true; return }
     introDone.current = true
     setIntroStep(0)
