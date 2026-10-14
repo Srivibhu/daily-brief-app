@@ -11,6 +11,7 @@ export default withAuth(async function handler(req, res) {
 
   try {
     // ── Tags first (tasks reference tag names) ────────────────────────────────
+    await sql`ALTER TABLE tags ADD COLUMN IF NOT EXISTS position INTEGER NOT NULL DEFAULT 999`
     const tagMap = {} // old name → inserted/existing name (same in this impl)
     for (const tag of tags) {
       const { rows } = await sql`
