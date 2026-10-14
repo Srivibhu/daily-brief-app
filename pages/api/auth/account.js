@@ -12,6 +12,8 @@ export default withAuth(async function handler(req, res) {
   const key = 'account:' + req.userId
   if (limited(res, rateLimit(key, { max: 8, windowMs: 15 * 60e3 }))) return
 
+  // Ensure google_id column exists (lazy migration, same as google.js)
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT`
   const { rows } = await sql`SELECT id, username, password_hash, google_id FROM users WHERE id = ${req.userId} LIMIT 1`
   const user = rows[0]
   if (!user) return res.status(404).json({ error: 'User not found' })

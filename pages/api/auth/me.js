@@ -2,6 +2,7 @@ import { withAuth } from '../../../lib/auth'
 import { sql } from '../../../lib/db'
 
 export default withAuth(async function handler(req, res) {
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT`
   const { rows } = await sql`
     SELECT id, username, created_at, google_id, password_hash FROM users WHERE id = ${req.userId} LIMIT 1`
   const user = rows[0]
