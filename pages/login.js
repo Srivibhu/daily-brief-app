@@ -4,6 +4,15 @@ import ThemeToggle from '../components/ThemeToggle'
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
+// Mobile browsers (Safari ITP in particular) silently drop cookies set on
+// cross-origin fetch responses, so the GIS popup/button flow doesn't work there.
+// We detect mobile and use a full-page redirect flow instead — the cookie is set
+// on a top-level GET response which all browsers accept.
+function isMobileBrowser() {
+  if (typeof navigator === 'undefined') return false
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+}
+
 export default function Login() {
   const router = useRouter()
   const [mode, setMode] = useState('login') // 'login' | 'register'
@@ -12,10 +21,28 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const googleDiv = useRef(null)
+  const [mobile, setMobile] = useState(false)
 
-  // Load Google Identity Services and render the button
+  // Detect mobile after mount (avoid SSR mismatch)
+  useEffect(() => { setMobile(isMobileBrowser()) }, [])
+
+  // Show error from redirect callback (e.g. ?error=google_denied)
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) return
+    const { error: e } = router.query
+    if (!e) return
+    const msgs = {
+      google_denied: 'Google sign-in was cancelled.',
+      google_no_code: 'Google sign-in failed — no code returned.',
+      google_failed: 'Google sign-in failed. Please try again.',
+      google_config: 'Google login is not configured on this server.',
+      google_missing_fields: 'Google account is missing required fields.',
+    }
+    setError(msgs[e] || 'Google sign-in failed.')
+  }, [router.query])
+
+  // Load Google Identity Services and render the button — desktop only
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || mobile) return
     const el = googleDiv.current
     if (!el) return
 
@@ -52,7 +79,7 @@ export default function Login() {
       script.addEventListener('load', init)
       return () => script.removeEventListener('load', init)
     }
-  }, []) // eslint-disable-line
+  }, [mobile]) // eslint-disable-line
 
   async function handleGoogleCredential({ credential }) {
     setError(''); setLoading(true)
@@ -99,7 +126,27 @@ export default function Login() {
 
         {GOOGLE_CLIENT_ID && (
           <>
-            <div ref={googleDiv} style={{ display: 'flex', justifyContent: 'center', minHeight: 44, marginBottom: 4 }} />
+            {mobile ? (
+              // Full-page redirect — cookie is set on the top-level GET response,
+              // which Safari and all mobile browsers accept (unlike fetch POST responses).
+              <a href="/api/auth/google-redirect" style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                width: '100%', padding: '10px 16px', borderRadius: 4, border: '1px solid var(--border)',
+                background: 'var(--card)', color: 'var(--ink)', textDecoration: 'none',
+                fontFamily: 'var(--sans)', fontSize: 14, fontWeight: 500, boxSizing: 'border-box',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                  <path fill="#4285F4" d="M44.5 20H24v8.5h11.7C34.1 33.9 29.6 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.6 20-21 0-1.4-.1-2.7-.5-4z"/>
+                  <path fill="#34A853" d="M6.3 14.7l7 5.1C15.1 16.1 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 16.1 3 9.3 7.9 6.3 14.7z"/>
+                  <path fill="#FBBC05" d="M24 45c5.5 0 10.4-1.9 14.2-5l-6.6-5.4C29.6 36.1 27 37 24 37c-5.5 0-10.2-3.5-11.8-8.4l-7 5.4C8.5 41.6 15.7 45 24 45z"/>
+                  <path fill="#EA4335" d="M44.5 20H24v8.5h11.7c-.8 2.4-2.4 4.4-4.5 5.8l6.6 5.4C41.5 36.4 45 31 45 24c0-1.4-.1-2.7-.5-4z"/>
+                </svg>
+                Continue with Google
+              </a>
+            ) : (
+              // Desktop: GIS-rendered button (popup flow works fine without ITP interference)
+              <div ref={googleDiv} style={{ display: 'flex', justifyContent: 'center', minHeight: 44, marginBottom: 4 }} />
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0' }}>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
               <span style={{ fontFamily: 'var(--sans)', fontSize: 11, color: 'var(--sub)', whiteSpace: 'nowrap' }}>or with username</span>
