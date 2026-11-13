@@ -222,7 +222,10 @@ export default function Dashboard() {
     p.timer = setTimeout(async () => {
       const body = p.patch; delete pending.current[id]
       const data = await api(`/api/tasks/${id}`, { method: 'PATCH', body })
-      if (data?.id) setTasks(ts => ts.map(t => (t.id === id ? { ...t, completed_at: data.completed_at } : t)))
+      if (data?.id) {
+        setTasks(ts => ts.map(t => (t.id === id ? { ...t, completed_at: data.completed_at } : t)))
+        if (data._next) setTasks(ts => [data._next, ...ts])
+      }
     }, delay)
   }
 
@@ -238,7 +241,8 @@ export default function Dashboard() {
 
   async function addTask(q) {
     const name = q.name.trim(); if (!name) return
-    const data = await api('/api/tasks', { method: 'POST', body: { name, due: q.due || null, due_time: q.time || null, tags: q.tag ? [q.tag] : [] } })
+    const data = await api('/api/tasks', { method: 'POST', body: { name, due: q.due || null, due_time: q.time || null, tags: q.tag ? [q.tag] : [],
+      repeat_type: q.repeatType || 'none', repeat_interval: q.repeatInterval || 1 } })
     if (data?.id) { setTasks(ts => [data, ...ts]); recordActivity() }
   }
 

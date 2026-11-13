@@ -3,7 +3,7 @@ import { todayStr } from '../lib/util'
 
 // "New quest" sheet, opened from the hotbar's + (or the N key).
 export default function AddTaskSheet({ tags, onAdd, onClose }) {
-  const [q, setQ] = useState({ name: '', due: todayStr(), time: '', tag: '' })
+  const [q, setQ] = useState({ name: '', due: todayStr(), time: '', tag: '', repeatType: 'none', repeatInterval: 1 })
   const input = useRef(null)
   useEffect(() => {
     input.current?.focus()
@@ -16,7 +16,7 @@ export default function AddTaskSheet({ tags, onAdd, onClose }) {
     e.preventDefault()
     if (!q.name.trim()) return
     await onAdd(q)
-    setQ({ name: '', due: todayStr(), time: '', tag: q.tag })
+    setQ({ name: '', due: todayStr(), time: '', tag: q.tag, repeatType: q.repeatType, repeatInterval: q.repeatInterval })
     input.current?.focus()
   }
 
@@ -39,6 +39,26 @@ export default function AddTaskSheet({ tags, onAdd, onClose }) {
         <div className="quest-when">
           <label><span>Due</span><input type="date" className="field-input" value={q.due} onChange={e => setQ({ ...q, due: e.target.value })} /></label>
           <label><span>Time</span><input type="time" className="field-input" value={q.time} onChange={e => setQ({ ...q, time: e.target.value })} /></label>
+        </div>
+        <div className="quest-when">
+          <label>
+            <span>Repeat</span>
+            <select className="field-input" value={q.repeatType} aria-label="Repeat type"
+              onChange={e => setQ({ ...q, repeatType: e.target.value })}>
+              <option value="none">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </label>
+          {q.repeatType !== 'none' && (
+            <label>
+              <span>Every</span>
+              <input type="number" className="field-input" min="1" max="365" value={q.repeatInterval} aria-label="Repeat interval"
+                style={{ width: '4rem' }}
+                onChange={e => setQ({ ...q, repeatInterval: Math.max(1, parseInt(e.target.value) || 1) })} />
+              <span style={{ marginLeft: '4px' }}>{q.repeatType === 'daily' ? (q.repeatInterval === 1 ? 'day' : 'days') : (q.repeatInterval === 1 ? 'week' : 'weeks')}</span>
+            </label>
+          )}
         </div>
         <div className="detail-footer">
           <span className="detail-meta-sm">Enter adds it and keeps this open</span>

@@ -17,14 +17,19 @@ export default withAuth(async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { name, notes, progress, tags, priority, link, due, due_time, history } = req.body
+    const { name, notes, progress, tags, priority, link, due, due_time, history,
+            repeat_type, repeat_interval } = req.body
     if (!name || typeof name !== 'string' || name.length > 500) return res.status(400).json({ error: 'Name must be 1 to 500 characters' })
+    const rtype    = ['daily','weekly'].includes(repeat_type) ? repeat_type : 'none'
+    const rinterval = (Number.isInteger(repeat_interval) && repeat_interval >= 1 && repeat_interval <= 365) ? repeat_interval : 1
     try {
       const { rows } = await sql`
-        INSERT INTO tasks (user_id, name, notes, progress, tags, priority, link, due, due_time, history)
+        INSERT INTO tasks (user_id, name, notes, progress, tags, priority, link, due, due_time, history,
+                           repeat_type, repeat_interval)
         VALUES (${userId}, ${name}, ${notes || ''}, ${progress || 0},
                 ${tags || []}::text[], ${priority || null}, ${cleanLink(link)},
-                ${due || null}, ${due_time || null}, ${JSON.stringify(history || [])}::jsonb)
+                ${due || null}, ${due_time || null}, ${JSON.stringify(history || [])}::jsonb,
+                ${rtype}, ${rinterval})
         RETURNING *`
       return res.status(201).json(dateOnly(rows[0]))
     } catch (error) {
