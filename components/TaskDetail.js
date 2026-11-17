@@ -56,6 +56,9 @@ export default function TaskDetail({ task: t, tags, onClose, onProgress, onUpdat
     data.push(h ? h.progress : 0)
   }
 
+  const repeatType = t.repeat_type || 'none'
+  const repeatInterval = t.repeat_interval ?? 1
+
   return (
     <div className="modal-back" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="modal detail-sheet" role="dialog" aria-modal="true" aria-label={t.name}>
@@ -85,6 +88,28 @@ export default function TaskDetail({ task: t, tags, onClose, onProgress, onUpdat
             <input type="date" className="field-input" value={t.due || ''} aria-label="Due date" onChange={e => onUpdate(t.id, { due: e.target.value || null })} />
             <input type="time" className="field-input" value={(t.due_time || '').slice(0, 5)} aria-label="Due time" onChange={e => onUpdate(t.id, { due_time: e.target.value || null })} />
             {t.due && <button className="link-btn" onClick={() => onUpdate(t.id, { due: null, due_time: null })}>Clear</button>}
+          </dd>
+          <dt>Repeat</dt>
+          <dd style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <select className="field-input" value={repeatType} aria-label="Repeat type"
+              onChange={e => onUpdate(t.id, { repeat_type: e.target.value })}>
+              <option value="none">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+            </select>
+            {repeatType !== 'none' && (
+              <>
+                <span style={{ color: 'var(--sub)', fontSize: '0.85em' }}>every</span>
+                <input type="number" className="field-input" min="1" max="365" value={repeatInterval}
+                  aria-label="Repeat interval" style={{ width: '4rem' }}
+                  onChange={e => onUpdate(t.id, { repeat_interval: Math.max(1, parseInt(e.target.value) || 1) })} />
+                <span style={{ color: 'var(--sub)', fontSize: '0.85em' }}>
+                  {repeatType === 'daily'
+                    ? (repeatInterval === 1 ? 'day' : 'days')
+                    : (repeatInterval === 1 ? 'week' : 'weeks')}
+                </span>
+              </>
+            )}
           </dd>
           <dt>Priority</dt>
           <dd className="seg">

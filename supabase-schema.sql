@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   history JSONB DEFAULT '[]',
   created_at DATE DEFAULT CURRENT_DATE,
   completed_at DATE,
+  repeat_type   TEXT NOT NULL DEFAULT 'none' CHECK (repeat_type IN ('none','daily','weekly')),
+  repeat_interval INT NOT NULL DEFAULT 1 CHECK (repeat_interval >= 1 AND repeat_interval <= 365),
   week_number INT GENERATED ALWAYS AS (EXTRACT(WEEK FROM created_at)::INT) STORED,
   year_number INT GENERATED ALWAYS AS (EXTRACT(YEAR FROM created_at)::INT) STORED
 );
