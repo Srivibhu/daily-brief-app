@@ -17,6 +17,63 @@ export function weekData(sessions) {
   return { labels, data }
 }
 
+// Inline minute editor shown when a mode button is long-pressed / double-clicked
+function ModeBtn({ m, timer }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const active = timer.mode === m
+  const mins = timer.durations[m]
+
+  function startEdit(e) {
+    e.stopPropagation()
+    if (timer.running) return
+    setDraft(String(mins))
+    setEditing(true)
+  }
+
+  function commit() {
+    const v = parseInt(draft)
+    const max = m === 'short' ? 60 : 120
+    if (v >= 1 && v <= max) {
+      timer.setDurations({ ...timer.durations, [m]: v })
+    }
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <span className="tmode-edit" style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+        <input
+          autoFocus
+          type="number"
+          min="1"
+          max={m === 'short' ? 60 : 120}
+          value={draft}
+          style={{ width: '3rem', fontSize: '0.85em', padding: '2px 4px', borderRadius: 4,
+                   background: 'var(--s3)', border: '1px solid var(--dim)', color: 'var(--text)', textAlign: 'center' }}
+          onChange={e => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
+          onClick={e => e.stopPropagation()}
+        />
+        <span style={{ fontSize: '0.75em', color: 'var(--sub)' }}>m</span>
+      </span>
+    )
+  }
+
+  return (
+    <button
+      className={`tmode${active ? ' active' : ''}`}
+      onClick={() => timer.setMode(m)}
+      onDoubleClick={startEdit}
+      title={`${m === 'focus' ? 'Focus' : m === 'short' ? 'Short' : 'Long'} · ${mins}m — double-click to change`}
+    >
+      {m === 'focus' ? 'Focus' : m === 'short' ? 'Short' : 'Long'}
+      <span style={{ marginLeft: 4, fontSize: '0.72em', opacity: 0.6 }}>{mins}m</span>
+    </button>
+  )
+}
+
 export default function FocusTab({ timer, tasks, sessions, focusTaskId, setFocusTaskId, onDeleteSession, onManualLog, petStage = 'egg', skin = 'bluebird' }) {
   const [manual, setManual] = useState('')
   const today = sessions.filter(s => s.date === todayStr())
@@ -29,11 +86,7 @@ export default function FocusTab({ timer, tasks, sessions, focusTaskId, setFocus
     <div className="focus-layout">
       <div className="timer-panel">
         <div className="timer-modes">
-          {['focus', 'short', 'long'].map(m => (
-            <button key={m} className={`tmode${timer.mode === m ? ' active' : ''}`} onClick={() => timer.setMode(m)}>
-              {m === 'focus' ? 'Focus' : m === 'short' ? 'Short' : 'Long'}
-            </button>
-          ))}
+          {['focus', 'short', 'long'].map(m => <ModeBtn key={m} m={m} timer={timer} />)}
         </div>
         <div className={`timer-stage${timer.running ? ' running' : ''}`}>
           <PetTimer stage={petStage} skin={skin} mode={timer.mode} running={timer.running} secs={timer.secs} total={timer.total} count={timer.count} />
@@ -49,6 +102,9 @@ export default function FocusTab({ timer, tasks, sessions, focusTaskId, setFocus
             {timer.running ? 'Pause' : timer.secs < timer.total ? 'Resume' : 'Start'}
           </button>
           <button className="tbtn" onClick={timer.skip} title="Skip" aria-label="Skip">⏭</button>
+        </div>
+        <div style={{ fontSize: '0.72em', color: 'var(--sub)', textAlign: 'center', marginTop: 2 }}>
+          Double-click a mode to change its duration
         </div>
         <label className="task-link-row chip">
           <select value={focusTaskId || ''} onChange={e => setFocusTaskId(e.target.value || null)}>
